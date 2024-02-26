@@ -1,13 +1,15 @@
 import numpy as np
 
-#from time import perf_counter_ns
 from unittest import TestCase, main
 
 class BoundingBox:
     def __init__(self, min_values, max_values):
-        if len(min_values) != len(max_values):
-            raise ValueError("min_values and max_values must be of the same length.")
-        if (len(np.shape(min_values)) != 1) or (len(np.shape(max_values)) != 1):
+        if not isinstance(min_values, np.ndarray):
+            raise TypeError("min_values and max_values need to be of type numpy.ndarray. "+
+                            "but are of type {type(min_values)} and {type(max_values)}")
+        if np.shape(min_values) != np.shape(max_values):
+            raise ValueError("min_values and max_values need to be of the same shape")
+        if (len(np.shape(min_values)) != 1):
             raise ValueError("min_values and max_values need to be 1-dimensional. " +
                              "but have shapes {np.shape(min_values)} and {np.shape(max_values)}")
         self.dim = len(min_values)
@@ -48,6 +50,7 @@ class BoundingBox:
                                      corner + (self.max[d],)])
             last_corners = next_corners
         return next_corners
+
     """
     basically list methods to get the points
     """
@@ -165,6 +168,23 @@ class TestBoundingBox(TestCase):
     """
     list methods
     """
+    def test_contains(self):
+        mins = np.zeros(3, dtype=int)
+        maxs = np.ones(3, dtype=int)
+        box = BoundingBox(mins, maxs)
+
+        self.assertTrue((0, 0, 0) in box)
+        self.assertFalse(0 in box)
+        self.assertFalse((2, 2, 2) in box)
+        self.assertTrue((1, 0, 0.5) in box)
+
+    def test_len(self):
+        mins = np.zeros(3, dtype=int)
+        maxs = np.ones(3, dtype=int)
+        box = BoundingBox(mins, maxs)
+        
+        self.assertEqual(len(box), 2**3)
+
     def test_next(self):
         mins = np.array([-2, 2, 0, 5])
         maxs = np.array([-1, 3, 1, 5])
@@ -178,15 +198,6 @@ class TestBoundingBox(TestCase):
                     (-2, 3, 0, 5), (-2, 3, 1, 5),
                     (-1, 2, 0, 5)]
         self.assertEqual(actual, expected)
-
-
-    def test_contains(self):
-        mins = np.zeros(3, dtype=int)
-        maxs = np.ones(3, dtype=int)
-        box = BoundingBox(mins, maxs)
-
-        self.assertTrue((0, 0, 0) in box)
-        self.assertFalse(0 in box)
 
     """
     comparisons

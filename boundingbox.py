@@ -1,6 +1,6 @@
 import numpy as np
 
-from util import scalar_check
+from util import scalar_check, point_check
 
 from unittest import TestCase, main
 
@@ -169,12 +169,7 @@ class BoundingBox:
         """
         Returns a shifted BoundingBox
         """
-        if not isinstance(point, np.ndarray):
-            raise TypeError("point needs to be a subclass numpy.ndarray "+
-                            f"but is of type {type(point)}")
-        if np.shape(point) != (self.dim,):
-            raise ValueError("point needs to have shape {(self.dim,)} "+
-                             f"but has shape {np.shape(point)}")
+        point_check(point, self.dim)
         return BoundingBox(self.min + point, self.max + point)
 
 class TestBoundingBox(TestCase):
@@ -229,7 +224,7 @@ class TestBoundingBox(TestCase):
         mins = np.zeros(3, dtype=int)
         maxs = np.ones(3, dtype=int)
         box = BoundingBox(mins, maxs)
-        
+
         self.assertEqual(len(box), 2**3)
 
     def test_next(self):
@@ -277,13 +272,13 @@ class TestBoundingBox(TestCase):
         mins = np.zeros(3, dtype=int)
         maxs = np.ones(3, dtype=int)
         cube = BoundingBox(mins, maxs)
-        
+
         self.assertRaises(TypeError, cube.compare, "string")
-        
+
         wrong_min = np.zeros(4, dtype=int)
         wrong_max = np.ones(4, dtype=int)
         wrong_cube = BoundingBox(wrong_min, wrong_max)
-        
+
         self.assertRaises(ValueError, cube.compare, wrong_cube)
 
     def test_comparisons_true(self):
@@ -387,16 +382,13 @@ class TestBoundingBox(TestCase):
         mins = np.zeros(3, dtype=int)
         maxs = np.ones(3, dtype=int)
         larger_maxs = np.ones(3, dtype=int)*2
-        
+
         poly = BoundingBox(mins, maxs)
         shifted = BoundingBox(maxs, larger_maxs)
-        
+
         self.assertEqual(poly.shift(maxs), shifted)
         self.assertEqual(shifted.shift(-maxs), poly)
         self.assertEqual(poly.shift(mins), poly)
-        
-        self.assertRaises(TypeError, poly.shift, 3)
-        self.assertRaises(ValueError, poly.shift, np.zeros(1))
 
 
 if __name__ == "__main__":

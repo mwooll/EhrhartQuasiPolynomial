@@ -1,6 +1,9 @@
 import numpy as np
 
+from util import scalar_check
+
 from unittest import TestCase, main
+
 
 class BoundingBox:
     def __init__(self, min_values, max_values):
@@ -89,7 +92,7 @@ class BoundingBox:
         return isinstance(other, BoundingBox) and self.dim == other.dim
     
     def compare(self, other):
-        if not isinstance(other, type(self)):
+        if not isinstance(other, BoundingBox):
             raise TypeError("other needs to be of type BoundingBox " +
                             f" but is of type {type(other)}")
         if self.dim != other.dim:
@@ -118,6 +121,10 @@ class BoundingBox:
     math support
     """
     def __mul__(self, number):
+        """
+        Returns a scaled BoundingBox
+        """
+        scalar_check(number)
         return BoundingBox(number*self.min, number*self.max)
 
     __rmul__ = __mul__
@@ -126,6 +133,10 @@ class BoundingBox:
         return self * (-1)
 
     def __truediv__(self, number):
+        """
+        Returns a scaled BoundingBox
+        """
+        scalar_check(number)
         return BoundingBox(self.min/number, self.max/number)
 
     def __add__(self, other):
@@ -156,11 +167,14 @@ class BoundingBox:
 
     def shift(self, point):
         """
-        type safe ersion of _shift
+        Returns a shifted BoundingBox
         """
-        if not isinstance(point, np.ndarray) or np.shape(point) != (self.dim,):
-            return ValueError("point needs to be a 1-dimensional " +
-                              f"numpy.ndarray with a width of {self.dim}")
+        if not isinstance(point, np.ndarray):
+            raise TypeError("point needs to be a subclass numpy.ndarray "+
+                            f"but is of type {type(point)}")
+        if np.shape(point) != (self.dim,):
+            raise ValueError("point needs to have shape {(self.dim,)} "+
+                             f"but has shape {np.shape(point)}")
         return BoundingBox(self.min + point, self.max + point)
 
 class TestBoundingBox(TestCase):
@@ -379,6 +393,11 @@ class TestBoundingBox(TestCase):
         
         self.assertEqual(poly.shift(maxs), shifted)
         self.assertEqual(shifted.shift(-maxs), poly)
+        self.assertEqual(poly.shift(mins), poly)
+        
+        self.assertRaises(TypeError, poly.shift, 3)
+        self.assertRaises(ValueError, poly.shift, np.zeros(1))
+
 
 if __name__ == "__main__":
    main()

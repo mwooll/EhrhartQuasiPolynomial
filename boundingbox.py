@@ -12,44 +12,47 @@ class BoundingBox:
         if (len(np.shape(min_values)) != 1):
             raise ValueError("min_values and max_values need to be 1-dimensional. " +
                              "but have shapes {np.shape(min_values)} and {np.shape(max_values)}")
+        if not isinstance(min_values[0], np.int64) or not isinstance(max_values[0], np.int64):
+            raise ValueError("dtype of min_values and max_values needs to be a subclass of " +
+                             f"numpy.int64, but are {type(min_values[0])} and {type(max_values[0])}")
         self.dim = len(min_values)
 
-        self.min, self.max = self.check_min_max(min_values, max_values)
+        self.min, self.max = self._check_min_max(min_values, max_values)
 
-        self.points = self.generate_points()
+        self.points = self._generate_points()
         self.index = -1
 
-        self.corners = self.generate_corners()
+        self.vertices = self._generate_vertices()
 
     """
     functions called in __init__
     """
-    def check_min_max(self, mins, maxs):
+    def _check_min_max(self, mins, maxs):
         if all(mins <= maxs):
             return mins, maxs
 
         combined = np.array([mins, maxs])
         return np.min(combined, axis=0), np.max(combined, axis=0)
 
-    def generate_points(self):
-        last_layer = [(x,) for x in range(self.min[0], self.max[0]+1)]
+    def _generate_points(self):
+        prev_layer = [(x,) for x in range(self.min[0], self.max[0]+1)]
         for d in range(1, self.dim):
             next_layer = []
-            for point in last_layer:
+            for point in prev_layer:
                 for y in range(self.min[d], self.max[d]+1):
                     next_layer.append(point + (y,))
-            last_layer = next_layer
+            prev_layer = next_layer
         return next_layer
 
-    def generate_corners(self):
-        last_corners = [(self.min[0],), (self.max[0],)]
+    def _generate_vertices(self):
+        prev_vertices = [(self.min[0],), (self.max[0],)]
         for d in range(1, self.dim):
-            next_corners = []
-            for corner in last_corners:
-                next_corners.extend([corner + (self.min[d],),
+            next_vertices = []
+            for corner in prev_vertices:
+                next_vertices.extend([corner + (self.min[d],),
                                      corner + (self.max[d],)])
-            last_corners = next_corners
-        return next_corners
+            prev_vertices = next_vertices
+        return next_vertices
 
     """
     basically list methods to get the points
@@ -71,19 +74,27 @@ class BoundingBox:
         return self.points[self.index]
 
     """
-    standard dunder functions
+    standard dunder methods
     """
     def __str__(self):
-        return f"{self.dim}-dimensional rectangular cuboid bounded by:\n{self.corners}"
+        return f"{self.dim}-dimensional rectangular cuboid bounded by:\n{self.vertices}"
 
     def __repr__(self):
         return f"BoundingBox({self.min}, {self.max})"
 
     """
-    comparisons
+    comparison operators
     """
     def comparable(self, other):
         return isinstance(other, BoundingBox) and self.dim == other.dim
+    
+    def compare(self, other):
+        if not isinstance(other, type(self)):
+            raise TypeError("other needs to be of type BoundingBox " +
+                            f" but is of type {type(other)}")
+        if self.dim != other.dim:
+            raise ValueError("self and other need to have the same dimension " +
+                             f"but have {self.dim} and {other.dim} respectively")
 
     def __eq__(self, other):
         return self.comparable(other) and \
@@ -96,6 +107,13 @@ class BoundingBox:
         return self.comparable(other) and \
             all(other.min <= self.min) and all(self.max <= other.max)
 
+    def __lt__(self, other):
+        """
+        Returns whether self is a true subset of other
+        """
+        return self.comparable(other) and \
+            all(other.min < self.min) and all(self.max < other.max)
+
     """
     math support
     """
@@ -107,32 +125,47 @@ class BoundingBox:
     def __neg__(self):
         return self * (-1)
 
+    def __truediv__(self, number):
+        return BoundingBox(self.min/number, self.max/number)
+
     def __add__(self, other):
         """
         Returns the smallest BoundingBox which contains both self and other
         """
-        if not self.comparable(other):
-            return ValueError("self and other need to be comparable")
+        self.compare(other)
         new_min = np.min(np.array([self.min, other.min]), axis=0)
         new_max = np.max(np.array([self.max, other.max]), axis=0)
         return BoundingBox(new_min, new_max)
 
     def intersection(self, other):
-        if not self.comparable(other):
-            return ValueError("self and other need to be comparable")
+        """
+        Returns the largest BoundingBox contained in both self and other
+        """
+        self.compare(other)
         new_min = np.max(np.array([self.min, other.min]), axis=0)
         new_max = np.min(np.array([self.max, other.max]), axis=0)
         return BoundingBox(new_min, new_max)
 
     def union(self, other):
-        if not self.comparable(other):
-            return ValueError("self and other need to be comparable")
+        """
+        Returns a set which contains all points of self and other
+        """
+        if not hasattr(other, "points"):
+            raise AttributeError("other needs to have the attribute 'points'")
         return set(self.points + other.points)
 
+    def shift(self, point):
+        """
+        type safe ersion of _shift
+        """
+        if not isinstance(point, np.ndarray) or np.shape(point) != (self.dim,):
+            return ValueError("point needs to be a 1-dimensional " +
+                              f"numpy.ndarray with a width of {self.dim}")
+        return BoundingBox(self.min + point, self.max + point)
 
 class TestBoundingBox(TestCase):
     """
-    points and corners
+    points and vertices
     """
     def test_unit_square(self):
         mins = np.array([0, 0])
@@ -158,12 +191,12 @@ class TestBoundingBox(TestCase):
                     (1, 0, 0), (1, 0, 1), (1, 1, 0), (1, 1, 1)]
         self.assertEqual(unit_cube.points, expected)
 
-    def test_corners_unit_cube(self):
+    def test_vertices_unit_cube(self):
         mins = np.zeros(3, dtype=int)
         maxs = np.ones(3, dtype=int)
         box = BoundingBox(mins, maxs)
 
-        self.assertEqual(box.points, box.corners)
+        self.assertEqual(box.points, box.vertices)
 
     """
     list methods
@@ -200,7 +233,7 @@ class TestBoundingBox(TestCase):
         self.assertEqual(actual, expected)
 
     """
-    comparisons
+    comparison operators
     """
     def test_comparable_false(self):
         mins = np.zeros(3, dtype=int)
@@ -226,15 +259,33 @@ class TestBoundingBox(TestCase):
         self.assertTrue(box1.comparable(box2))
         self.assertTrue(box3.comparable(box1))
 
+    def test_compare_error(self):
+        mins = np.zeros(3, dtype=int)
+        maxs = np.ones(3, dtype=int)
+        cube = BoundingBox(mins, maxs)
+        
+        self.assertRaises(TypeError, cube.compare, "string")
+        
+        wrong_min = np.zeros(4, dtype=int)
+        wrong_max = np.ones(4, dtype=int)
+        wrong_cube = BoundingBox(wrong_min, wrong_max)
+        
+        self.assertRaises(ValueError, cube.compare, wrong_cube)
+
     def test_comparisons_true(self):
         mins = np.zeros(3, dtype=int)
         maxs = np.ones(3, dtype=int)
+        max3 = np.ones(3, dtype=int)*3
+
         box1 = BoundingBox(mins, maxs)
         box2 = BoundingBox(mins, maxs)
+        box3 = BoundingBox(-maxs, max3)
 
         self.assertTrue(box1 == box2)
         self.assertTrue(box1 <= box2)
         self.assertTrue(box1 >= box2)
+        self.assertTrue(box1 < box3)
+        self.assertTrue(box3 > box2)
 
     def test_comparisons_false(self):
         mins = np.zeros(3, dtype=int)
@@ -248,6 +299,8 @@ class TestBoundingBox(TestCase):
         self.assertFalse(box1 == box2)
         self.assertFalse(box1 <= box2)
         self.assertFalse(box1 >= box2)
+        self.assertFalse(box1 < box1)
+        self.assertFalse(box1 > box2)
 
     """
     math operations
@@ -286,7 +339,9 @@ class TestBoundingBox(TestCase):
         other_maxs = np.ones(3, dtype=int)
         other_box = BoundingBox(other_mins, other_maxs)
 
-        self.assertEqual(box + other_box, BoundingBox(other_mins, maxs))
+        result = BoundingBox(other_mins, maxs)
+        self.assertEqual(box + other_box, result)
+        self.assertEqual(other_box.__add__(box), result)
 
     def test_union(self):
         mins = np.zeros(2, dtype=int)
@@ -313,6 +368,17 @@ class TestBoundingBox(TestCase):
         intersection = BoundingBox(np.zeros(2, dtype=int), np.array([0, 1], dtype=int))
         self.assertEqual(box.intersection(other_box), intersection)
         self.assertEqual(other_box.intersection(box), intersection)
+
+    def test_shift(self):
+        mins = np.zeros(3, dtype=int)
+        maxs = np.ones(3, dtype=int)
+        larger_maxs = np.ones(3, dtype=int)*2
+        
+        poly = BoundingBox(mins, maxs)
+        shifted = BoundingBox(maxs, larger_maxs)
+        
+        self.assertEqual(poly.shift(maxs), shifted)
+        self.assertEqual(shifted.shift(-maxs), poly)
 
 if __name__ == "__main__":
    main()

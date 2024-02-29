@@ -7,14 +7,15 @@ from unittest import TestCase, main
 
 class BoundingBox:
     def __init__(self, min_values, max_values):
-        if not isinstance(min_values, np.ndarray):
-            raise TypeError("min_values and max_values need to be of type numpy.ndarray. "+
+        if not (isinstance(min_values, np.ndarray) and isinstance(max_values, np.ndarray)):
+            raise TypeError("min_values and max_values need to be of type numpy.ndarray. " +
                             "but are of type {type(min_values)} and {type(max_values)}")
-        if np.shape(min_values) != np.shape(max_values):
-            raise ValueError("min_values and max_values need to be of the same shape")
-        if (len(np.shape(min_values)) != 1):
-            raise ValueError("min_values and max_values need to be 1-dimensional. " +
-                             "but have shapes {np.shape(min_values)} and {np.shape(max_values)}")
+        if min_values.ndim != 1 or max_values.ndim != 1:
+            raise ValueError("min_values and max_values need to be 1-dimensional but " +
+                             f"have dimension {min_values.ndim} and {max_values.ndim}")
+        if min_values.shape != max_values.shape:
+            raise ValueError("min_values and max_values need to have the same shape but "+ 
+                             f"have {min_values.shape} and {max_values.shape} respectively")
         if not isinstance(min_values[0], np.int64) or not isinstance(max_values[0], np.int64):
             raise ValueError("dtype of min_values and max_values needs to be a subclass of " +
                              f"numpy.int64, but are {type(min_values[0])} and {type(max_values[0])}")
@@ -174,8 +175,29 @@ class BoundingBox:
 
 class TestBoundingBox(TestCase):
     """
-    points and vertices
+    __init__
     """
+    def test_init_errors(self):
+        self.assertRaises(TypeError, BoundingBox,
+                          np.array([0, 0]), [2, 3])
+        self.assertRaises(TypeError, BoundingBox,
+                          [2, 3], np.array([0, 0]))
+
+        self.assertRaises(ValueError, BoundingBox,
+                          np.array([[0, 0], [1, 1]]), np.array([0, 0]))
+        self.assertRaises(ValueError, BoundingBox,
+                          np.array([0, 0]), np.array([[0, 0], [1, 1]]))
+
+        self.assertRaises(ValueError, BoundingBox,
+                          np.array([0]), np.array([1, 1]))
+        self.assertRaises(ValueError, BoundingBox,
+                          np.array([0, 0, 0]), np.array([1]))
+
+        self.assertRaises(ValueError, BoundingBox,
+                          np.array([0.5, 0]), np.array([0, 0]))
+        self.assertRaises(ValueError, BoundingBox,
+                          np.array([0, 0]), np.array([0, 0.5]))
+
     def test_unit_square(self):
         mins = np.array([0, 0])
         maxs = np.array([1, 1])
@@ -191,21 +213,17 @@ class TestBoundingBox(TestCase):
         expected_set = set([point for point in x_axis.points])
         self.assertEqual(expected_set, set([(0, 0), (1, 0), (2, 0), (3, 0)]))
 
-    def test_unit_cube_inverted(self):
+    def test_unit_cube(self):
         maxs = np.zeros(3, dtype=int)
         mins = np.ones(3, dtype=int)
         unit_cube = BoundingBox(mins, maxs)
+        inv_cube = BoundingBox(maxs, mins)
 
         expected = [(0, 0, 0), (0, 0, 1), (0, 1, 0), (0, 1, 1),
                     (1, 0, 0), (1, 0, 1), (1, 1, 0), (1, 1, 1)]
         self.assertEqual(unit_cube.points, expected)
-
-    def test_vertices_unit_cube(self):
-        mins = np.zeros(3, dtype=int)
-        maxs = np.ones(3, dtype=int)
-        box = BoundingBox(mins, maxs)
-
-        self.assertEqual(box.points, box.vertices)
+        self.assertEqual(inv_cube.points, expected)
+        self.assertEqual(unit_cube.points, unit_cube.vertices)
 
     """
     list methods

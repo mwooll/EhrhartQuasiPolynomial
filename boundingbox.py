@@ -4,6 +4,12 @@ from util import scalar_check, point_check
 
 from unittest import TestCase, main
 
+def get_bounding_box(vertices):
+    array = np.array(vertices)
+    
+    min_value = np.array(np.floor(np.min(array, axis=0)), dtype=int)
+    max_value = np.array(np.ceil (np.max(array, axis=0)), dtype=int)
+    return BoundingBox(min_value, max_value)
 
 class BoundingBox:
     def __init__(self, min_values, max_values):
@@ -23,10 +29,10 @@ class BoundingBox:
 
         self.min, self.max = self._check_min_max(min_values, max_values)
 
-        self.points = self._generate_points()
+        self.points, self.points_array = self._generate_points()
         self.index = -1
 
-        self.vertices = self._generate_vertices()
+        self.vertices, self.vertex_array = self._generate_vertices()
 
     """
     functions called in __init__
@@ -46,7 +52,7 @@ class BoundingBox:
                 for y in range(self.min[d], self.max[d]+1):
                     next_layer.append(point + (y,))
             prev_layer = next_layer
-        return next_layer
+        return prev_layer, np.array(prev_layer, dtype=int)
 
     def _generate_vertices(self):
         prev_vertices = [(self.min[0],), (self.max[0],)]
@@ -56,19 +62,15 @@ class BoundingBox:
                 next_vertices.extend([corner + (self.min[d],),
                                      corner + (self.max[d],)])
             prev_vertices = next_vertices
-        return next_vertices
+        return prev_vertices, np.array(prev_vertices, dtype=int)
 
     """
     basically list methods to get the points
     """
     def __contains__(self, other):
-        if not hasattr(other, "__len__"):
-            return False
-        if len(other) != self.dim:
-            return False
+        point_check(other, self.dim)
 
-        return all(self.min[k] <= other[k] <= self.max[k] 
-                   for k in range(self.dim))
+        return all((self.min <= other)*(other <= self.max))
 
     def __len__(self):
         return len(self.points)
@@ -76,6 +78,9 @@ class BoundingBox:
     def __next__(self):
         self.index += 1
         return self.points[self.index]
+
+    def __iter__(self):
+        return iter(self.points)
 
     """
     standard dunder methods
@@ -225,6 +230,16 @@ class TestBoundingBox(TestCase):
         self.assertEqual(inv_cube.points, expected)
         self.assertEqual(unit_cube.points, unit_cube.vertices)
 
+    def test_single_point(self):
+        zeros = np.zeros(3, dtype=int)
+        origin = BoundingBox(zeros, zeros)
+        self.assertEqual(origin.points, [(0, 0, 0)])
+        self.assertEqual(origin.vertices, [(0, 0, 0)]*8)
+
+    def test_single_dimension_point(self):
+        one = BoundingBox(np.array([1]), np.array([1]))
+        self.assertEqual(one.points, [(1,)])
+        self.assertEqual(one.vertices, [(1,)]*2)
     """
     list methods
     """
@@ -233,10 +248,9 @@ class TestBoundingBox(TestCase):
         maxs = np.ones(3, dtype=int)
         box = BoundingBox(mins, maxs)
 
-        self.assertTrue((0, 0, 0) in box)
-        self.assertFalse(0 in box)
-        self.assertFalse((2, 2, 2) in box)
-        self.assertTrue((1, 0, 0.5) in box)
+        self.assertTrue(np.array([0, 0, 0]) in box)
+        self.assertFalse(np.array([2, 2, 2]) in box)
+        self.assertTrue(np.array([1, 0, 0.5]) in box)
 
     def test_len(self):
         mins = np.zeros(3, dtype=int)
@@ -258,6 +272,14 @@ class TestBoundingBox(TestCase):
                     (-2, 3, 0, 5), (-2, 3, 1, 5),
                     (-1, 2, 0, 5)]
         self.assertEqual(actual, expected)
+
+    def test_iter(self):
+        mins = np.zeros(3, dtype=int)
+        maxs = np.ones(3, dtype=int)
+        box = BoundingBox(mins, maxs)
+
+        points = [point for point in box]
+        self.assertEqual(points, box.points)
 
     """
     comparison operators

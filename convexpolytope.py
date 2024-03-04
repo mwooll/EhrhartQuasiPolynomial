@@ -20,6 +20,8 @@ class ConvexPolytope:
 
         self.vertex_set = self._get_vertex_set(vertices)
 
+        self.box = self.get_bounding_box()
+
         # number of rows = number of vertices
         # number of columns = dimension of vertices
         self.num, self.dim = self.vertices.shape
@@ -73,8 +75,11 @@ class ConvexPolytope:
         return
 
     def __contains__(self, point):
-        if self.dim != len(point):
+        point_check(point, self.dim)
+
+        if point not in self.box:
             return False
+
 
     """
     standard dunder methods

@@ -21,7 +21,7 @@ def point_check(point, dimension):
         raise TypeError("point needs to be a subclass of numpy.ndarray " +
                         f"but is of type {type(point)}")
     if np.shape(point) != (dimension,):
-        raise ValueError("point needs to have shape {(dimension,)} " +
+        raise ValueError(f"point needs to have shape {(dimension,)} " +
                          f"but has shape {np.shape(point)}")
 
 class TestUtil(TestCase):

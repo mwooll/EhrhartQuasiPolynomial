@@ -1,20 +1,12 @@
 import numpy as np
-from math import factorial
 
 import sage.all
 from sage.all import Polyhedron, QQ, PolynomialRing
 
-"""
-from sage.rings.integer_ring import ZZ
-from sage.rings.rational_field import QQ
-from sage.geometry.polyhedron.constructor import Polyhedron
-from sage.rings.polynomial.polynomial_ring_constructor import PolynomialRing
-"""
-
 from boundingbox import BoundingBox, get_bounding_box
 
-from sage.misc.sage_unittest import InstanceTester
 from unittest import TestCase, main
+
 
 R = PolynomialRing(QQ, "x")
 x = R.gen()

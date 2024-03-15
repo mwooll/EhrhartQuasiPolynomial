@@ -1,4 +1,5 @@
 import numpy as np
+from itertools import product
 
 import sage.all
 from sage.rings.rational_field import QQ
@@ -43,6 +44,13 @@ def points_contained(vertices):
 
     return points_contained
 
+def get_itertool_bounding_box(vertices):
+    dimension = len(vertices[0])
+    columns = [[vertex[d] for vertex in vertices]
+               for d in range(dimension)]
+    mins = [min(col) for col in columns]
+    maxs = [max(col) for col in columns]
+    return product(*[range(mins[d], maxs[d]+1) for d in range(dimension)])
 
 class TestEhrhartPolynomial(TestCase):
     def test_ehrhart_polynomial(self):
@@ -90,5 +98,11 @@ class TestEhrhartPolynomial(TestCase):
         flat_tri = points_contained([[0, 0, 0], [1, 0, 0], [0, 1, 0]])
         self.assertEqual(flat_tri, [3, 6, 10, 15])
 
+def itertool_bounding_box():
+    vertices = [[0, 0, 0], [2, 0, 0], [0, -1, 0], [0, 0, 1]]
+    box = get_itertool_bounding_box(vertices)
+    for k in box:
+        print(k)
 if __name__ == "__main__":
    main()
+   # itertool_bounding_box()

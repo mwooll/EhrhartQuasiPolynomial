@@ -1,7 +1,11 @@
 import numpy as np
 
 import sage.all
-from sage.all import Polyhedron, QQ, PolynomialRing
+from sage.rings.rational_field import QQ
+from sage.rings.polynomial.polynomial_ring_constructor import PolynomialRing
+from sage.geometry.polyhedron.constructor import Polyhedron
+# from sage.all import QQ, PolynomialRing, Polyhedron
+
 
 from boundingbox import BoundingBox, get_bounding_box
 

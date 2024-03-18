@@ -1,14 +1,9 @@
-import numpy as np
 from itertools import product
 
 import sage.all
 from sage.rings.rational_field import QQ
 from sage.rings.polynomial.polynomial_ring_constructor import PolynomialRing
 from sage.geometry.polyhedron.constructor import Polyhedron
-# from sage.all import QQ, PolynomialRing, Polyhedron
-
-
-from boundingbox import BoundingBox, get_bounding_box
 
 from unittest import TestCase, main
 
@@ -26,14 +21,15 @@ def ehrhart_polynomial(vertices):
     return polynomial
 
 def points_contained(vertices):
+    dimension = len(vertices[0])
+
     base_poly = Polyhedron(vertices)
-    base_box = get_bounding_box(vertices)
-    dimension = base_box.dim
+    base_min, base_max = get_bounding_extrema(vertices, dimension)
 
     points_contained = [0]*(dimension+1)
     for k in range(1, dimension+2):
         poly = k*base_poly
-        box = k*base_box
+        box = get_bounding_box(base_min, base_max, k)
 
         contained = 0
         for point in box:
@@ -44,13 +40,17 @@ def points_contained(vertices):
 
     return points_contained
 
-def get_itertool_bounding_box(vertices):
-    dimension = len(vertices[0])
+def get_bounding_extrema(vertices, dimension):
     columns = [[vertex[d] for vertex in vertices]
                for d in range(dimension)]
     mins = [min(col) for col in columns]
     maxs = [max(col) for col in columns]
-    return product(*[range(mins[d], maxs[d]+1) for d in range(dimension)])
+    return mins, maxs
+
+def get_bounding_box(mins, maxs, factor):
+    return product(*[range(factor*mini, factor*maxi + 1)
+                     for mini, maxi in zip(mins, maxs)])
+
 
 class TestEhrhartPolynomial(TestCase):
     def test_ehrhart_polynomial(self):
@@ -73,7 +73,8 @@ class TestEhrhartPolynomial(TestCase):
         square_poly = ehrhart_polynomial([[0, 0], [1, 0], [1, 1], [0, 1]])
         self.assertEqual(square_poly, x**2 + 2*x + 1) # (x + 1)**2
 
-        vertices = BoundingBox(np.zeros(3, dtype=int), np.ones(3, dtype=int)).vertices
+        vertices = [(0, 0, 0), (0, 0, 1), (0, 1, 0), (0, 1, 1),
+                    (1, 0, 0), (1, 0, 1), (1, 1, 0), (1, 1, 1)]
         cube_poly = ehrhart_polynomial(vertices)
         self.assertEqual(cube_poly, x**3 + 3*x**2 + 3*x + 1) # (x + 1)**3
 
@@ -85,7 +86,8 @@ class TestEhrhartPolynomial(TestCase):
         square = points_contained([[0, 0], [1, 0], [1, 1], [0, 1]])
         self.assertEqual(square, [4, 9, 16])
 
-        vertices = BoundingBox(np.zeros(3, dtype=int), np.ones(3, dtype=int)).vertices
+        vertices = [(0, 0, 0), (0, 0, 1), (0, 1, 0), (0, 1, 1),
+                    (1, 0, 0), (1, 0, 1), (1, 1, 0), (1, 1, 1)]
         cube = points_contained(vertices)
         self.assertEqual(cube, [8, 27, 64, 125])
 
@@ -98,11 +100,38 @@ class TestEhrhartPolynomial(TestCase):
         flat_tri = points_contained([[0, 0, 0], [1, 0, 0], [0, 1, 0]])
         self.assertEqual(flat_tri, [3, 6, 10, 15])
 
-def itertool_bounding_box():
-    vertices = [[0, 0, 0], [2, 0, 0], [0, -1, 0], [0, 0, 1]]
-    box = get_itertool_bounding_box(vertices)
-    for k in box:
-        print(k)
+    def test_get_bounding_extreme(self):
+        vertices = [[0, 1, 2], [4, -1, 2]]
+        expected = ([0, -1, 2], [4, 1, 2])
+        self.assertEqual(get_bounding_extrema(vertices, 3), expected)
+
+        vertex = [[0, 0, 0, 0, 0]]
+        expected = ([0, 0, 0, 0, 0], [0, 0, 0, 0, 0])
+        self.assertEqual(get_bounding_extrema(vertex, 5), expected)
+
+        vertices = [(0, 0, 0), (0, 0, 1), (0, 1, 0), (0, 1, 1),
+                    (1, 0, 0), (1, 0, 1), (1, 1, 0), (1, 1, 1)]
+        expected = ([0, 0, 0], [1, 1, 1])
+        self.assertEqual(get_bounding_extrema(vertices, 3), expected)
+
+    def test_get_bounding_box(self):
+        mins, maxs = [0, -1, -2], [1, 2, 3]
+        expected = [(0, 0, 0)]
+        self.assertEqual(list(get_bounding_box(mins, maxs, 0)), expected)
+
+        mins, maxs = [-1, 2], [0, 3]
+        expected = [(-1, 2), (-1, 3), (0, 2), (0, 3)]
+        self.assertEqual(list(get_bounding_box(mins, maxs, 1)), expected)
+
+        mins, maxs = [0, 0, 0], [1, 1, 1]
+        expected = [(0, 0, 0), (0, 0, 1), (0, 1, 0), (0, 1, 1),
+                    (1, 0, 0), (1, 0, 1), (1, 1, 0), (1, 1, 1)]
+        self.assertEqual(list(get_bounding_box(mins, maxs, 1)),
+                         expected)
+
+        mins, maxs = [-5], [5]
+        expected = [(k,) for k in range(-10, 11)]
+        self.assertEqual(list(get_bounding_box(mins, maxs, 2)), expected)
+
 if __name__ == "__main__":
    main()
-   # itertool_bounding_box()

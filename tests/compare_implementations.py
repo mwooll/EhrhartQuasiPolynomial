@@ -1,10 +1,10 @@
 from ehrhart_polynomial import ehrhart_polynomial
+from ehrhart_polynomial import QQ, PolynomialRing, Polyhedron
 
-import sage.all
-from sage.rings.rational_field import QQ
-from sage.rings.polynomial.polynomial_ring_constructor import PolynomialRing
-from sage.geometry.polyhedron.constructor import Polyhedron
-# from sage.all import QQ, PolynomialRing, Polyhedron
+# import sage.all
+# from sage.rings.rational_field import QQ
+# from sage.rings.polynomial.polynomial_ring_constructor import PolynomialRing
+# from sage.geometry.polyhedron.constructor import Polyhedron
 
 from unittest import TestCase, main
 
@@ -15,7 +15,7 @@ x = R.gen()
 def simplex(dim):
     vertices = [[0 for k in range(dim+1)] for v in range(dim+2)]
     for d in range(dim+1):
-        vertices[d+1][d] = 1
+        vertices[d][d] = 1
     return vertices
 
 class Comparer(TestCase):
@@ -24,8 +24,8 @@ class Comparer(TestCase):
         latte = Polyhedron(vertices).ehrhart_polynomial(variable="x")
         self.assertEqual(own, latte)
 
-    # latte fails for polytope with only 1 vertex
-    # though the ehrhart_polynomial is just 1 anyway
+    # latte fails for polytopes with only 1 vertex
+    # though the ehrhart_polynomial is just 1 anyway (if the vertex is integral)
     def degree_0(self):
         point = [[0, 0, 0, 0, 0]]
         self.compare(point)

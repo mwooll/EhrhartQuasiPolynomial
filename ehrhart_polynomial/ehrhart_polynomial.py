@@ -1,12 +1,11 @@
 from itertools import product
 
-#import sage.all
 from sage.rings.rational_field import QQ
 from sage.rings.polynomial.polynomial_ring_constructor import PolynomialRing
 from sage.geometry.polyhedron.constructor import Polyhedron
 
 R = PolynomialRing(QQ, "x")
-x = R.gen()
+x = R.gen() 
 
 
 def ehrhart_polynomial(vertices):

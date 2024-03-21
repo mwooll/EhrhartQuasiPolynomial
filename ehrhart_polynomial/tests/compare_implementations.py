@@ -1,10 +1,9 @@
 from ehrhart_polynomial import ehrhart_polynomial
-from ehrhart_polynomial import QQ, PolynomialRing, Polyhedron
 
-# import sage.all
-# from sage.rings.rational_field import QQ
-# from sage.rings.polynomial.polynomial_ring_constructor import PolynomialRing
-# from sage.geometry.polyhedron.constructor import Polyhedron
+import sage.all
+from sage.rings.rational_field import QQ
+from sage.rings.polynomial.polynomial_ring_constructor import PolynomialRing
+from sage.geometry.polyhedron.constructor import Polyhedron
 
 from unittest import TestCase, main
 

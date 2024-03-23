@@ -19,9 +19,11 @@ def simplex(dim):
 
 class Comparer(TestCase):
     def compare(self, vertices):
-        own = ehrhart_polynomial(vertices)
+        own = ehrhart_polynomial(vertices, False)
+        simplified = ehrhart_polynomial(vertices, True)
         latte = Polyhedron(vertices).ehrhart_polynomial(variable="x")
         self.assertEqual(own, latte)
+        self.assertEqual(simplified, latte)
 
     # latte fails for polytopes with only 1 vertex
     # though the ehrhart_polynomial is just 1 anyway (if the vertex is integral)
@@ -37,7 +39,7 @@ class Comparer(TestCase):
         self.compare(diagonal)
 
     def test_degree_2(self):
-        triangle = [[0, 0], [1, 0], [0, 1]]
+        triangle = [[0, 0], [3, 0], [0, 6]]
         self.compare(triangle)
 
         square = [[0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 1, 0]]

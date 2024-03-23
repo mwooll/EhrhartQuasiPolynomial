@@ -10,12 +10,14 @@ R = PolynomialRing(QQ, "x")
 x = R.gen() 
 
 
+# calculate ehrhart polynomial
 def ehrhart_polynomial(vertices, simplify=False):
-    y_values = points_contained(vertices)
+    y_values, scale_factor = points_contained(vertices, simplify)
 
     interpolation_points = [(k+1, y) for k, y in enumerate(y_values)]
     polynomial = R.lagrange_polynomial(interpolation_points)
-
+    polynomial = polynomial(scale_factor*x)
+    
     return polynomial
 
 def points_contained(vertices, simplify):
@@ -40,10 +42,12 @@ def points_contained(vertices, simplify):
             if point in poly:
                 contained += 1 
 
-        points_contained[k-1] = contained*scale_factor
+        points_contained[k-1] = contained
 
-    return points_contained
+    return points_contained, scale_factor
 
+
+# get bounding box of polyhedron
 def get_bounding_extrema(vertices, dimension):
     columns = [[vertex[d] for vertex in vertices]
                for d in range(dimension)]
@@ -55,6 +59,8 @@ def get_bounding_box(mins, maxs, factor):
     return product(*[range(factor*mini, factor*maxi + 1)
                      for mini, maxi in zip(mins, maxs)])
 
+
+# simplify the polyhedron
 def simplify_vertices(vertices, dimension):
     vertices, mins, maxs, new_dim = drop_constant_dimensions(vertices, dimension)
     new_vertices, scale_factor = scale_down_vertices(vertices)

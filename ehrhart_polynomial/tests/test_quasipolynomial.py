@@ -39,10 +39,14 @@ class TestQuasiPolynomial(TestCase):
         self.assertEqual(eval(repr(self.poly)), self.poly)
         self.assertEqual(eval(repr(self.ipf)), self.ipf)
 
-    # def test_str(self):
-    #     self.assertEqual(str(self.poly),
-    #                      "QuasiPolynomial given by \n" +
-    #                      "1(k) + 2(k)*k^1 + 3(k)*k^2")
+    def test_str(self):
+        self.assertEqual(str(self.poly),
+                          "QuasiPolynomial given by \n" +
+                          "1 + 2*k + 3*k^2")
+        self.assertEqual(str(self.ipf),
+                         "QuasiPolynomial given by \n"
+                         + "1 + IntegerPeriodicFunction([2, 3])(k)*k + "
+                         + "IntegerPeriodicFunction([1, 2, 3])(k)*k^2")
 
     # math support
     def test_neg(self):
@@ -56,6 +60,19 @@ class TestQuasiPolynomial(TestCase):
 
         self.assertEqual(self.poly + 1, QuasiPolynomial([2, 2, 3]))
         self.assertEqual(2 + self.poly, QuasiPolynomial([3, 2, 3]))
+
+        self.assertEqual(self.ipf + 4,
+                         QuasiPolynomial([5,
+                                          IntegerPeriodicFunction([2, 3]),
+                                          IntegerPeriodicFunction([1, 2, 3])
+                                         ]))
+        self.assertEqual(self.poly + IntegerPeriodicFunction([0, 1]),
+                         QuasiPolynomial([IntegerPeriodicFunction([1, 2]), 2, 3]))
+        self.assertEqual(self.ipf + self.poly,
+                         QuasiPolynomial([2,
+                                          IntegerPeriodicFunction([4, 5]),
+                                          IntegerPeriodicFunction([4, 5, 6]),
+                                         ]))
 
     def test_sub(self):
         self.assertEqual(self.poly - self.zero, self.poly)
@@ -83,4 +100,4 @@ class TestQuasiPolynomial(TestCase):
 
 
 if __name__ == "__main__":
-    main()
+    main()   

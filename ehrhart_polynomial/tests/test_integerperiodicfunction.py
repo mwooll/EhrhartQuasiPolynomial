@@ -34,6 +34,11 @@ class TestIntegerPeriodicFunction(TestCase):
                          + "\n\t2 if k%3 == 1"
                          + "\n\t3 if k%3 == 2")
 
+    def test_coefficient_repr(self):
+        self.assertEqual(self.ipf.coefficient_repr("k"),
+                         "IntegerPeriodicFunction([1, 2, 3])(k)")
+        self.assertEqual(self.zero.coefficient_repr("k"), "0")
+
     # math support
     def test_neg(self):
         self.assertEqual(-self.ipf, IntegerPeriodicFunction([-1, -2, -3]))
@@ -71,6 +76,7 @@ class TestIntegerPeriodicFunction(TestCase):
     def test_truediv(self):
         self.assertEqual(self.ipf/2, IntegerPeriodicFunction([0.5, 1, 1.5]))
         self.assertEqual(self.ipf/(-4/5), IntegerPeriodicFunction([-5/4, -5/2, -15/4]))
+
 
 if __name__ == "__main__":
     main()   

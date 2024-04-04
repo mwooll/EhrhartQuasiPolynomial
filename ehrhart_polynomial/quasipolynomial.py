@@ -16,10 +16,15 @@ class QuasiPolynomial():
                 coefs[index] = IntegerPeriodicFunction([coef])
             elif isinstance(coef, IntegerPeriodicFunction):
                 pass
+            elif hasattr(coef, "__int__"):
+                coefs[index] = IntegerPeriodicFunction([int(coef)])
+            elif hasattr(coef, "__float__"):
+                coefs[index] = IntegerPeriodicFunction([float(coef)])
             else:
-                raise ValueError("elements of coefs must be instances of int, "
-                                 + " float or IntegerPeriodicFunction but got "
-                                 + f"{coef} of type {type(coef)}")
+                raise TypeError("elements of coefs must be instances of "
+                                + "IntegerPeriodicFunction, int or float,"
+                                + " or implement __int__ or __float__"
+                                + f"but is has type {type(coef)}")
 
         self.coefs, self.degree = self._reduce_coefs(coefs)
         self.period = self._calculate_peroid()
@@ -59,9 +64,9 @@ class QuasiPolynomial():
     """
     def __str__(self):
         function_str = "QuasiPolynomial given by \n"
-        function_str += f"{repr(self.coefs[0])}(k)"
+        function_str += f"{self.coefs[0].coefficient_repr('k')}"
         for power, coef in enumerate(self.coefs[1:]):
-            function_str += f" + {repr(coef)}(k)*k^{power+1}"
+            function_str += f" + {coef.coefficient_repr('k')}*k" + f"^{power+1}"*(power>0)
         return function_str
 
     def __repr__(self):
@@ -90,20 +95,28 @@ class QuasiPolynomial():
             else:
                 sum_coefs = other.coefs.copy()
                 add_coefs = self.coefs
-    
+
             for index, coef in enumerate(add_coefs):
                 sum_coefs[index] += coef
-    
+
             return QuasiPolynomial(sum_coefs)
 
-        if isinstance(other, (int, float)):
-            new_coefs = self.coefs.copy()
-            new_coefs[0] += other
-            return QuasiPolynomial(new_coefs)
+        elif isinstance(other, (int, float, IntegerPeriodicFunction)):
+            return QuasiPolynomial([c + other*(index==0)
+                                    for index, c in enumerate(self.coefs)])
+
+        elif hasattr(other, "__int__"):
+            return QuasiPolynomial([c + int(other)*(index==0)
+                                    for index, c in enumerate(self.coefs)])
+
+        elif hasattr(other, "__float__"):
+            return QuasiPolynomial([c + float(other)*(index==0)
+                                    for index, c in enumerate(self.coefs)])
 
         else:
-            return TypeError("other must be instance of QuasiPolynomial, int"
-                             f" or float, but has type {type(other)}")
+            raise TypeError("other must be instance of QuasiPolynomial, "
+                            + "int or float, or implement __int__ or __float__"
+                            + f"but is has type {type(other)}")
 
     __radd__ = __add__
 
@@ -114,18 +127,26 @@ class QuasiPolynomial():
         return (-self).__add__(other)
 
     def __mul__(self, other):
-        if isinstance(other, (int, float)):
+        if isinstance(other, (int, float, IntegerPeriodicFunction)):
             return QuasiPolynomial([other*c for c in self.coefs])
             
-        if isinstance(other, QuasiPolynomial):
+        elif isinstance(other, QuasiPolynomial):
             mul_coefs = [0]*(self.degree + other.degree + 1)
             for self_power, self_coef in enumerate(self.coefs):
                 for  other_power, other_coef in enumerate(other.coefs):
                     mul_coefs[self_power + other_power] += self_coef*other_coef
             return QuasiPolynomial(mul_coefs)
+
+        elif hasattr(other, "__int__"):
+            return QuasiPolynomial([c*int(other) for c in self.coefs])
+
+        elif hasattr(other, "__float__"):
+            return QuasiPolynomial([c*float(other) for c in self.coefs])
+
         else:
-            return TypeError("other must be instance of int, float or" +
-                             f" QuasiPolynomial but has type {type(other)}")
+            raise TypeError("other must be instance of QuasiPolynomial, "
+                            + "int or float, or implement __int__ or __float__"
+                            + f"but is has type {type(other)}")
     __rmul__ = __mul__
 
     def __truediv__(self, other):
@@ -133,3 +154,11 @@ class QuasiPolynomial():
     
     def __rtruediv__(self, other):
         raise NotImplementedError
+
+if __name__ == "__main__":
+    coefs = [1, IntegerPeriodicFunction([2, 3]), IntegerPeriodicFunction([1, 2, 3])]
+    ipf = QuasiPolynomial(coefs)
+    poly = QuasiPolynomial([1, 2, 3])
+
+    # print(ipf + poly)
+    print(poly + IntegerPeriodicFunction([0, 1]))

@@ -54,6 +54,12 @@ class IntegerPeriodicFunction:
             function_str += f"\n\t{val} if k%{self.period} == {ind}"
         return function_str
 
+    def coefficient_repr(self, variable):
+        if self.period == 1:
+            return str(self.constants[0])
+        else:
+            return f"{repr(self)}({variable})"
+
     """
     comparison operators
     """
@@ -78,9 +84,14 @@ class IntegerPeriodicFunction:
             add_period = lcm(self.period, other.period)
             add_constants = [self(k) + other(k) for k in range(add_period)]
             return IntegerPeriodicFunction(add_constants)
+        elif hasattr(other, "__int__"):
+            return IntegerPeriodicFunction([c + int(other) for c in self.constants])
+        elif hasattr(other, "__float__"):
+            return IntegerPeriodicFunction([c + float(other) for c in self.constants])
         else:
             raise TypeError("other must be instance of IntegerPeriodicFunction, "
-                            + "int or float, but is has type {type(other)}")
+                            + "int or float, or implement __int__ or __float__"
+                            + f"but is has type {type(other)}")
 
     __radd__ = __add__
 
@@ -97,9 +108,14 @@ class IntegerPeriodicFunction:
             mul_period = lcm(self.period, other.period)
             mul_constants = [self(k)*other(k) for k in range(mul_period)]
             return IntegerPeriodicFunction(mul_constants)
+        elif hasattr(other, "__int__"):
+            return IntegerPeriodicFunction([c*int(other) for c in self.constants])
+        elif hasattr(other, "__float__"):
+            return IntegerPeriodicFunction([c*float(other) for c in self.constants])
         else:
             raise TypeError("other must be instance of IntegerPeriodicFunction, "
-                            + "int or float, but is has type {type(other)}")
+                            + "int or float, or implement __int__ or __float__"
+                            + f"but is has type {type(other)}")
 
     __rmul__ = __mul__
 

@@ -19,12 +19,12 @@ class TestQuasiPolynomial(TestCase):
     def test_reduce_coefs(self):
         self.assertEqual(self.zero, QuasiPolynomial([0, 0, 0, 0]))
         self.assertEqual(self.poly, QuasiPolynomial([1, 2, 3, 0, 0]))
+        self.assertEqual(QuasiPolynomial([1, 0]).degree, 0)
 
     def test_calculate_period(self):
         self.assertEqual(self.zero.period, 1)
         self.assertEqual(self.poly.period, 1)
         self.assertEqual(self.ipf.period, 6)
-
 
     # call
     def test_call(self):

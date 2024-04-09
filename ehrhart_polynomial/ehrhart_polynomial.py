@@ -1,10 +1,14 @@
 from itertools import product
 
+from quasipolynomial import QuasiPolynomial
+
 import sage.all
 from sage.rings.rational_field import QQ
 from sage.rings.polynomial.polynomial_ring_constructor import PolynomialRing
 from sage.geometry.polyhedron.constructor import Polyhedron
 from sage.arith.misc import gcd
+from sage.arith.functions import lcm
+from sage.functions.other import ceil, floor
 
 R = PolynomialRing(QQ, "x")
 x = R.gen() 
@@ -12,15 +16,17 @@ x = R.gen()
 
 # calculate ehrhart polynomial
 def ehrhart_polynomial(vertices, simplify=False):
-    y_values, scale_factor = points_contained(vertices, simplify)
+    y_values, scale_factor = points_contained_sequence(vertices, simplify)
 
     interpolation_points = [(k+1, y) for k, y in enumerate(y_values)]
     polynomial = R.lagrange_polynomial(interpolation_points)
     polynomial = polynomial(scale_factor*x)
-    
+
     return polynomial
 
-def points_contained(vertices, simplify):
+
+# points contained
+def points_contained_sequence(vertices, simplify):
     dimension = len(vertices[0])
 
     if simplify:
@@ -33,22 +39,34 @@ def points_contained(vertices, simplify):
     base_poly = Polyhedron(vertices)
     polytope_period = get_period(vertices)
 
-    points_contained = [0]*(dimension+1)
-    for k in range(1, dimension+2):
-        poly = k*base_poly
-        box = get_bounding_box(base_min, base_max, k)
+    if polytope_period == 1:
+        iterations = dimension
+        bounding_box = get_bounding_box
+    else:
+        iterations = dimension*polytope_period
+        bounding_box = get_bounding_box_rational
 
-        contained = 0
-        for point in box:
-            if point in poly:
-                contained += 1 
+    counting_sequence = [0]*(iterations+1)
+    
+    poly = Polyhedron(vertices)
+    counting_sequence[0] = points_contained(poly, bounding_box(base_min, base_max, 1))
+    for k in range(1, iterations+1):
+        poly += base_poly
+        box = bounding_box(base_min, base_max, k+1)
 
-        points_contained[k-1] = contained
+        counting_sequence[k] = points_contained(poly, box)
 
-    return points_contained, scale_factor
+    return counting_sequence, scale_factor
+
+def points_contained(poly, box):
+    contained = 0
+    for point in box:
+        if point in poly:
+            contained += 1
+    return contained
 
 
-# get bounding box of polyhedron
+# bounding box
 def get_bounding_extrema(vertices, dimension):
     columns = [[vertex[d] for vertex in vertices]
                for d in range(dimension)]
@@ -60,15 +78,20 @@ def get_bounding_box(mins, maxs, factor):
     return product(*[range(factor*mini, factor*maxi + 1)
                      for mini, maxi in zip(mins, maxs)])
 
-#
+def get_bounding_box_rational(mins, maxs, factor):
+    return product(*[range(ceil(factor*mini), floor(factor*maxi) + 1)
+                     for mini, maxi in zip(mins, maxs)])
+
+
+# period
 def get_period(vertices):
-    period = 1
-    rationals = [coordinate%1 for vertex in vertices
-                 for coordinate in vertex if coordinate%1 != 0]
-    
+    denominators = [QQ(coordinate).denominator() for vertex in vertices
+                    for coordinate in vertex]
+    period = lcm(denominators)
     return period
 
-# simplify the polyhedron
+
+# simplify polytope
 def simplify_vertices(vertices, dimension):
     vertices, mins, maxs, new_dim = drop_constant_dimensions(vertices, dimension)
     new_vertices, scale_factor = scale_down_vertices(vertices)
@@ -88,7 +111,7 @@ def drop_constant_dimensions(vertices, dimension):
     maxs = [max(col) for col in columns]
 
     not_equal = [mins[d] != maxs[d] for d in range(dimension)]
-    
+
     vertices = drop_dimensions(vertices, not_equal)
     mins, maxs = drop_dimensions([mins, maxs], not_equal)
     new_dimension = sum(not_equal)

@@ -1,4 +1,4 @@
-from integerperiodicfunction import IntegerPeriodicFunction
+from ehrhart_polynomial import IntegerPeriodicFunction
 
 from unittest import TestCase, main
 

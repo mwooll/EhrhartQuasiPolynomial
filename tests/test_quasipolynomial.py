@@ -1,5 +1,4 @@
-from quasipolynomial import QuasiPolynomial
-from integerperiodicfunction import IntegerPeriodicFunction
+from ehrhart_polynomial import QuasiPolynomial, IntegerPeriodicFunction
 
 from unittest import TestCase, main
 

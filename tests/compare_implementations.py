@@ -12,8 +12,8 @@ R = PolynomialRing(QQ, "x")
 x = R.gen()
 
 def simplex(dim):
-    vertices = [[0 for k in range(dim+1)] for v in range(dim+2)]
-    for d in range(dim+1):
+    vertices = [[0 for k in range(dim)] for v in range(dim+1)]
+    for d in range(dim):
         vertices[d][d] = 1
     return vertices
 
@@ -54,7 +54,7 @@ class Comparer(TestCase):
         self.compare(cube)
 
     def test_simplex(self):
-        for d in range(2, 5):
+        for d in range(2, 6):
             smplx = simplex(d)
             self.compare(smplx)
 

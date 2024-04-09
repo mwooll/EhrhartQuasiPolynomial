@@ -66,13 +66,19 @@ class TestQuasiPolynomial(TestCase):
                                           IntegerPeriodicFunction([2, 3]),
                                           IntegerPeriodicFunction([1, 2, 3])
                                          ]))
+
+        result = QuasiPolynomial([2,
+                                  IntegerPeriodicFunction([4, 5]),
+                                  IntegerPeriodicFunction([4, 5, 6]),
+                                 ])
+        self.assertEqual(self.ipf + self.poly, result)
+        self.assertEqual(self.poly + self.ipf, result)
+
+        summation = QuasiPolynomial([IntegerPeriodicFunction([1, 2]), 2, 3])
         self.assertEqual(self.poly + IntegerPeriodicFunction([0, 1]),
-                         QuasiPolynomial([IntegerPeriodicFunction([1, 2]), 2, 3]))
-        self.assertEqual(self.ipf + self.poly,
-                         QuasiPolynomial([2,
-                                          IntegerPeriodicFunction([4, 5]),
-                                          IntegerPeriodicFunction([4, 5, 6]),
-                                         ]))
+                         summation)
+        self.assertEqual(IntegerPeriodicFunction([0, 1]) + self.poly,
+                         summation)
 
     def test_sub(self):
         self.assertEqual(self.poly - self.zero, self.poly)
@@ -90,7 +96,21 @@ class TestQuasiPolynomial(TestCase):
 
         self.assertEqual(self.poly * self.zero, self.zero)
         self.assertEqual(self.poly*self.poly, QuasiPolynomial([1, 4, 10, 12, 9]))
-    
+
+        product = QuasiPolynomial([1,
+                                   IntegerPeriodicFunction([4, 5]),
+                                   IntegerPeriodicFunction([8, 11, 10, 10, 9, 12]),
+                                   IntegerPeriodicFunction([8, 13, 12, 11, 10, 15]),
+                                   IntegerPeriodicFunction([3, 6, 9])
+                                  ])
+        self.assertEqual(self.poly*self.ipf, product)
+        self.assertEqual(self.ipf*self.poly, product)
+
+        result = QuasiPolynomial([IntegerPeriodicFunction([0, 1]),
+                                  IntegerPeriodicFunction([0, 2]),
+                                  IntegerPeriodicFunction([0, 3])])
+        self.assertEqual(self.poly*IntegerPeriodicFunction([0, 1]), result)
+        self.assertEqual(IntegerPeriodicFunction([0, 1])*self.poly, result)
 
     def test_truediv(self):
         self.assertEqual(self.poly/2, QuasiPolynomial([1/2, 1, 3/2]))

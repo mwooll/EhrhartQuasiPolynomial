@@ -31,6 +31,7 @@ def points_contained(vertices, simplify):
         scale_factor = 1
 
     base_poly = Polyhedron(vertices)
+    polytope_period = get_period(vertices)
 
     points_contained = [0]*(dimension+1)
     for k in range(1, dimension+2):
@@ -59,6 +60,13 @@ def get_bounding_box(mins, maxs, factor):
     return product(*[range(factor*mini, factor*maxi + 1)
                      for mini, maxi in zip(mins, maxs)])
 
+#
+def get_period(vertices):
+    period = 1
+    rationals = [coordinate%1 for vertex in vertices
+                 for coordinate in vertex if coordinate%1 != 0]
+    
+    return period
 
 # simplify the polyhedron
 def simplify_vertices(vertices, dimension):

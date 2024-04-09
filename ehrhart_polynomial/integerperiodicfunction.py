@@ -68,32 +68,44 @@ class IntegerPeriodicFunction:
             return self.constants == other.constants
         if isinstance(other, (int, float)):
             return self.period == 1 and self.constants[0] == other
-        
+
         return False
 
     """
     math support
     """
+    def NotImplementedError_message(self, other):
+        return ("other must be instance of IntegerPeriodicFunction, "
+                + "int or float, or implement __int__ or __float__ "
+                + f"but has type {type(other)}")
+        
     def __neg__(self):
         return IntegerPeriodicFunction([-c for c in self.constants])
 
     def __add__(self, other):
         if isinstance(other, (int, float)):
             return IntegerPeriodicFunction([c + other for c in self.constants])
+
         elif isinstance(other, IntegerPeriodicFunction):
             add_period = lcm(self.period, other.period)
             add_constants = [self(k) + other(k) for k in range(add_period)]
             return IntegerPeriodicFunction(add_constants)
+
         elif hasattr(other, "__int__"):
             return IntegerPeriodicFunction([c + int(other) for c in self.constants])
+
         elif hasattr(other, "__float__"):
             return IntegerPeriodicFunction([c + float(other) for c in self.constants])
-        else:
-            raise TypeError("other must be instance of IntegerPeriodicFunction, "
-                            + "int or float, or implement __int__ or __float__"
-                            + f"but is has type {type(other)}")
 
-    __radd__ = __add__
+        else:
+            return NotImplemented
+
+    def __radd__(self, other):
+        value = self.__add__(other)
+        if value is not NotImplemented:
+            return value
+
+        raise NotImplementedError(self.NotImplementedError_message(other))
 
     def __sub__(self, other):
         return self.__add__(-other)
@@ -104,23 +116,30 @@ class IntegerPeriodicFunction:
     def __mul__(self, other):
         if isinstance(other, (int, float)):
             return IntegerPeriodicFunction([c*other for c in self.constants])
+
         elif isinstance(other, IntegerPeriodicFunction):
             mul_period = lcm(self.period, other.period)
             mul_constants = [self(k)*other(k) for k in range(mul_period)]
             return IntegerPeriodicFunction(mul_constants)
+
         elif hasattr(other, "__int__"):
             return IntegerPeriodicFunction([c*int(other) for c in self.constants])
+
         elif hasattr(other, "__float__"):
             return IntegerPeriodicFunction([c*float(other) for c in self.constants])
-        else:
-            raise TypeError("other must be instance of IntegerPeriodicFunction, "
-                            + "int or float, or implement __int__ or __float__"
-                            + f"but is has type {type(other)}")
 
-    __rmul__ = __mul__
+        else:
+            return NotImplemented
+
+    def __rmul__(self, other):
+        value = self.__mul__(other)
+        if value is not NotImplemented:
+            return value
+
+        raise NotImplementedError(self.NotImplementedError_message(other))
 
     def __truediv__(self, other):
         return self.__mul__(1/other)
 
     def __rtruediv__(self, other):
-        raise NotImplementedError
+        raise NotImplementedError("dividing by a TntegerPeriodicFunction seems illegal")

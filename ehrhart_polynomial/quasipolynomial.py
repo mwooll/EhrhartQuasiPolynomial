@@ -14,12 +14,16 @@ class QuasiPolynomial():
         for index, coef in enumerate(coefs):
             if isinstance(coef, (int, float)):
                 coefs[index] = IntegerPeriodicFunction([coef])
+
             elif isinstance(coef, IntegerPeriodicFunction):
                 pass
+
             elif hasattr(coef, "__int__"):
                 coefs[index] = IntegerPeriodicFunction([int(coef)])
+
             elif hasattr(coef, "__float__"):
                 coefs[index] = IntegerPeriodicFunction([float(coef)])
+
             else:
                 raise TypeError("elements of coefs must be instances of "
                                 + "IntegerPeriodicFunction, int or float,"
@@ -83,6 +87,11 @@ class QuasiPolynomial():
     """
     math support
     """
+    def NotImplementedError_message(self, other):
+        return ("other must be instance of QuasiPolynomial, "
+                + "IntegerPeriodicFunction, int or float or implement",
+                + f"__int__ or __float__ but has type {type(other)}")
+
     def __neg__(self):
         return QuasiPolynomial([-c for c in self.coefs])
 
@@ -114,11 +123,14 @@ class QuasiPolynomial():
                                     for index, c in enumerate(self.coefs)])
 
         else:
-            raise TypeError("other must be instance of QuasiPolynomial, "
-                            + "int or float, or implement __int__ or __float__"
-                            + f"but is has type {type(other)}")
+            return NotImplemented
 
-    __radd__ = __add__
+    def __radd__(self, other):
+        value = self.__add__(other)
+        if value is not NotImplemented:
+            return value
+
+        raise NotImplementedError(self.NotImplementedError_message(other))
 
     def __sub__(self, other):
         return self.__add__(-other)
@@ -129,7 +141,7 @@ class QuasiPolynomial():
     def __mul__(self, other):
         if isinstance(other, (int, float, IntegerPeriodicFunction)):
             return QuasiPolynomial([other*c for c in self.coefs])
-            
+
         elif isinstance(other, QuasiPolynomial):
             mul_coefs = [0]*(self.degree + other.degree + 1)
             for self_power, self_coef in enumerate(self.coefs):
@@ -144,21 +156,17 @@ class QuasiPolynomial():
             return QuasiPolynomial([c*float(other) for c in self.coefs])
 
         else:
-            raise TypeError("other must be instance of QuasiPolynomial, "
-                            + "int or float, or implement __int__ or __float__"
-                            + f"but is has type {type(other)}")
-    __rmul__ = __mul__
+            return NotImplemented
+
+    def __rmul__(self, other):
+        value = self.__mul__(other)
+        if value is not NotImplemented:
+            return value
+
+        raise NotImplementedError(self.NotImplementedError_message(other))
 
     def __truediv__(self, other):
         return self.__mul__(1/other)
-    
+
     def __rtruediv__(self, other):
-        raise NotImplementedError
-
-if __name__ == "__main__":
-    coefs = [1, IntegerPeriodicFunction([2, 3]), IntegerPeriodicFunction([1, 2, 3])]
-    ipf = QuasiPolynomial(coefs)
-    poly = QuasiPolynomial([1, 2, 3])
-
-    # print(ipf + poly)
-    print(poly + IntegerPeriodicFunction([0, 1]))
+        raise NotImplementedError("dividing by a QuasiPolynomial seems illegal")

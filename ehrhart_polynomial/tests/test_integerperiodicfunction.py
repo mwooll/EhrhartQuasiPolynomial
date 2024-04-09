@@ -58,14 +58,14 @@ class TestIntegerPeriodicFunction(TestCase):
         self.assertEqual(1/2 - self.ipf, IntegerPeriodicFunction([-0.5, -1.5, -2.5]))
 
         self.assertEqual(self.ipf - self.zero, self.ipf)
-        # self.assertEqual(self.ipf - self.ipf, self.zero)
+        self.assertEqual(self.ipf - self.ipf, self.zero)
 
         self.assertEqual(self.ipf - IntegerPeriodicFunction([0, 1]),
                          IntegerPeriodicFunction([1, 1, 3, 0, 2, 2]))
 
     def test_mul(self):
         self.assertEqual(self.ipf*1, self.ipf)
-        # self.assertEqual(0*self.ipf, self.zero)
+        self.assertEqual(0*self.ipf, self.zero)
         self.assertEqual(self.ipf*2, IntegerPeriodicFunction([2, 4, 6]))
         self.assertEqual(-4/3*self.ipf, IntegerPeriodicFunction([-4/3, -8/3, -4]))
 

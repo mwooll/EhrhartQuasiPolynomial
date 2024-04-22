@@ -8,8 +8,8 @@ def readfile(filename):
 
 setup(
     name="ehrhart_polynomial",
-    version="0.0.3",
-    description="Package to calculate the Ehrhart polynomial of convex polytopes",
+    version="0.0.4",
+    description="Package to calculate the Ehrhart (quasi)polynomial of convex polytopes",
     long_description=readfile("README.md"), # get the long description from the README
 
     url="https://github.com/mwooll/Ehrhart",

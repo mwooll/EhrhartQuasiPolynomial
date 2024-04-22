@@ -25,10 +25,14 @@ def ehrhart_polynomial(vertices, simplify=False):
 
     return polynomial
 
+
+# interpolate polynomial
 def interpolate_polynomial(points, period, scale_factor):
     if period == 1: # integral polytopes
-        polynomial =  R.lagrange_polynomial(points)
-        return polynomial(scale_factor*x)
+        polynomial = R.lagrange_polynomial(points)
+        polynomial = polynomial(scale_factor*x)
+        coefs = [float(c) for c in polynomial.coefficients(sparse=False)]
+        return QuasiPolynomial(coefs)
 
     polynomials = [0]*period
     for k in range(period):
@@ -54,6 +58,7 @@ def construct_quasipolynomial(polynomials, period, scale_factor):
         periodic_coefficients[degree] = IntegerPeriodicFunction(periodic_values)
 
     return QuasiPolynomial(periodic_coefficients)
+
 
 # points contained
 def points_contained_sequence(vertices, simplify):
@@ -150,7 +155,3 @@ def scale_down_vertices(vertices):
     scale_factor = gcd(num for vertex in vertices for num in vertex)
     vertices = [[num//scale_factor for num in vertex] for vertex in vertices]
     return vertices, scale_factor
-
-if __name__ == "__main__":
-    rat = [(0, 0), (3/2, 0), (0, 1/3)]
-    print(ehrhart_polynomial(rat))

@@ -22,28 +22,28 @@ class TestEhrhartPolynomial(TestCase):
     def test_ehrhart_polynomial(self):
         # integral polytopes
         point_poly = ehrhart_polynomial([(0, 0, 0, 0, 0)])
-        self.assertEqual(point_poly, 1)
+        self.assertEqual(point_poly, QuasiPolynomial([1]))
 
         axis = ehrhart_polynomial([[-3], [3]])
-        self.assertEqual(axis, 6*x + 1)
+        self.assertEqual(axis, QuasiPolynomial([1, 6]))
 
         triangle = ehrhart_polynomial([[0, 0], [1, 0], [0, 1]])
-        self.assertEqual(triangle, x**2/2 + 1.5*x + 1)
+        self.assertEqual(triangle, QuasiPolynomial([1, 1.5, 0.5]))
 
         flat_tri = ehrhart_polynomial([[0, 0, 0], [1, 0, 0], [0, 1, 0]])
-        self.assertEqual(flat_tri, x**2/2 + 1.5*x + 1)
+        self.assertEqual(flat_tri, QuasiPolynomial([1, 1.5, 0.5]))
 
         triangle_pyramid = ehrhart_polynomial([[0, 0, 0], [1, 0, 0],
                                                 [0, 1, 0], [0, 0, 1]])
-        self.assertEqual(triangle_pyramid, x**3/6 + x**2 + 11/6*x + 1)
+        self.assertEqual(triangle_pyramid, QuasiPolynomial([1, 11/6, 1, 1/6]))
 
         square_poly = ehrhart_polynomial([[0, 0], [1, 0], [1, 1], [0, 1]])
-        self.assertEqual(square_poly, x**2 + 2*x + 1) # (x + 1)**2
+        self.assertEqual(square_poly, QuasiPolynomial([1, 2, 1])) # (x + 1)**2
 
         vertices = [(0, 0, 0), (0, 0, 1), (0, 1, 0), (0, 1, 1),
                     (1, 0, 0), (1, 0, 1), (1, 1, 0), (1, 1, 1)]
         cube_poly = ehrhart_polynomial(vertices)
-        self.assertEqual(cube_poly, x**3 + 3*x**2 + 3*x + 1) # (x + 1)**3
+        self.assertEqual(cube_poly, QuasiPolynomial([1, 3, 3, 1]))# (x + 1)**3
 
         # rational polytopes
         rational_point = [[1/7, 1/2]]
@@ -68,7 +68,7 @@ class TestEhrhartPolynomial(TestCase):
 
         giant_rectangle = [[0, 0], [100, 0], [100, 50], [0, 50]]
         self.assertEqual(ehrhart_polynomial(giant_rectangle, True),
-                         5000*x**2 + 150*x + 1)
+                         QuasiPolynomial([1, 150, 5000]))
 
 
     # points contained

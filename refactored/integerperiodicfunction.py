@@ -2,16 +2,16 @@ from sage.arith.functions import lcm
 from sage.arith.misc import factor
 
 from sage.categories.pushout import ConstructionFunctor
-from sage.categories.rings import Rings
+from sage.categories.commutative_rings import CommutativeRings
 
-import doctest
-from sage.misc.sage_unittest import TestSuite
-
-from sage.rings.ring import Ring
+from sage.rings.ring import CommutativeRing
 
 from sage.structure.unique_representation import UniqueRepresentation
 from sage.structure.element import RingElement
 
+
+import doctest
+from sage.misc.sage_unittest import TestSuite
 
 ###     Element     ###
 class IntegerPeriodicFunctionElement(RingElement):
@@ -303,13 +303,13 @@ class IntegerPeriodicFunctionElement(RingElement):
 
 
 ###     Parent     ###
-class IntegerPeriodicFunctionRing(UniqueRepresentation, Ring):
+class IntegerPeriodicFunctionRing(UniqueRepresentation, CommutativeRing):
     # needed for automatic coercion
     Element = IntegerPeriodicFunctionElement
     def __init__(self, base):
-        if base not in Rings():
+        if base not in CommutativeRings():
             raise ValueError(f"{base} is not a ring.")
-        Ring.__init__(self, base)                         
+        CommutativeRing.__init__(self, base)                         
             
     def _repr_(self):
         return f"Ring of Integer Periodic Functions over {self.base()}"
@@ -413,7 +413,7 @@ class IntegerPeriodicFunctionFunctor(ConstructionFunctor):
     def __init__(self, args=None, kwds=None):
         self.args = args or ()
         self.kwds = kwds or {}
-        ConstructionFunctor.__init__(self, Rings(), Rings())
+        ConstructionFunctor.__init__(self, CommutativeRings(), CommutativeRings())
 
     def _apply_functor(self, R):
         return IntegerPeriodicFunctionRing(R, *self.args, **self.kwds)

@@ -2,6 +2,9 @@ from math import lcm
 
 from .integerperiodicfunction import IntegerPeriodicFunction
 
+from sage.rings.polynomial.polynomial_ring_constructor import PolynomialRing
+
+# commutative algebra fromework from adm-cycles?
 
 class QuasiPolynomial():
     def __init__(self, coefficients=None):
@@ -81,7 +84,11 @@ class QuasiPolynomial():
     def __eq__(self, other):
         if isinstance(other, QuasiPolynomial):
             return self.coefficients == other.coefficients
+
+        if isinstance(other, int):
+            return self.degree == 0 and self.coefficients[0] == other
         return False
+
 
     """
     math support

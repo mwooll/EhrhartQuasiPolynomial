@@ -5,15 +5,15 @@ from .integerperiodicfunction import IntegerPeriodicFunction
 from .quasipolynomial import QuasiPolynomial
 
 import sage.all
-from sage.rings.rational_field import QQ
-from sage.rings.polynomial.polynomial_ring_constructor import PolynomialRing
-from sage.geometry.polyhedron.constructor import Polyhedron
 from sage.arith.misc import gcd
 from sage.arith.functions import lcm
 from sage.functions.other import ceil, floor
+from sage.rings.rational_field import QQ
+from sage.rings.polynomial.polynomial_ring_constructor import PolynomialRing
+from sage.geometry.polyhedron.constructor import Polyhedron
 
 R = PolynomialRing(QQ, "x")
-x = R.gen() 
+x = R.gen()
 
 
 # calculate ehrhart polynomial

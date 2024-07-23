@@ -1,7 +1,9 @@
-from math import lcm
+from sage.arith.functions import lcm
 from sympy.ntheory import factorint
 
-class IntegerPeriodicFunction:
+# commutative algebra framework from adm-cycles?
+
+class IntegerPeriodicFunction():
     def __init__(self, constants=None):
         if constants is None:
             constants = [0]
@@ -142,4 +144,4 @@ class IntegerPeriodicFunction:
         return self.__mul__(1/other)
 
     def __rtruediv__(self, other):
-        raise NotImplementedError("dividing by a TntegerPeriodicFunction seems illegal")
+        raise NotImplementedError

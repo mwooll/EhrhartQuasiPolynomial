@@ -24,9 +24,9 @@ class IntegerPeriodicFunctionElement(RingElement):
         >>> from integerperiodicfunction import *
         >>> from sage.rings.rational_field import QQ
         >>> ipfr = IntegerPeriodicFunctionRing(QQ)
-        >>> ipfr.zero()
+        >>> ipfr()
         IntegerPeriodicFunctionElement(Ring of Integer Periodic Functions over Rational Field, [0])
-        >>> print(ipfr([1, 2, 3]))
+        >>> print(ipfr([1, 2, 3])) # doctest: +NORMALIZE_WHITESPACE
         IntegerPeriodicFunction over Rational Field given by
             1 if k%3 == 0
             2 if k%3 == 1
@@ -35,8 +35,8 @@ class IntegerPeriodicFunctionElement(RingElement):
     def __init__(self, parent, constants=None):
         r"""
         INPUT:
-            - parent : instance of 'IntegerPeriodicFunctionRing
-            - constants : iterable of elements of 'parent.base_ring()' (default=None)
+            - parent : instance of 'IntegerPeriodicFunctionRing'
+            - constants : iterable of elements of 'parent.base()' (default=None)
         """
         base = parent.base()
         if constants is None:
@@ -52,13 +52,7 @@ class IntegerPeriodicFunctionElement(RingElement):
     def _calculate_period(self, constants):
         r"""
         Calculate the period of "constants".
-        To get the period of an integer periodic function call ".period()".
-
-        Tests::
-
-            >>> from integerperiodicfunction import *
-            >>> from sage.rings.rational_field import QQ
-            >>> ipfr = IntegerPeriodicFunctionRing(QQ)
+        To get the period of self call '.period()'.
         """
         length = len(constants)
 
@@ -74,6 +68,10 @@ class IntegerPeriodicFunctionElement(RingElement):
         return period
 
     def _get_period_divisor(self, constants, length, prime, power):
+        r"""
+        Return the largest power of 'prime' which divides the period of 'constants'.
+        Needed to compute the period of 'constants'.
+        """
         last_div = 1
         fact = prime
         for k in range(power):
@@ -88,7 +86,7 @@ class IntegerPeriodicFunctionElement(RingElement):
         r"""
         Return the period of self
 
-        Examples::
+        EXAMPLES::
 
             >>> from integerperiodicfunction import *
             >>> from sage.rings.rational_field import QQ
@@ -107,7 +105,7 @@ class IntegerPeriodicFunctionElement(RingElement):
         r"""
         Return the constants of self
 
-        Examples::
+        EXAMPLES::
 
             >>> from integerperiodicfunction import *
             >>> from sage.rings.rational_field import QQ
@@ -119,11 +117,10 @@ class IntegerPeriodicFunctionElement(RingElement):
 
     def __call__(self, k):
         r"""
-        Return the value at k%period.
+        Return the value at 'k'%period.
         
         INPUT:
             - k : integer
-
 
         EXAMPLES::
             
@@ -187,7 +184,7 @@ class IntegerPeriodicFunctionElement(RingElement):
         r"""
         Return whether self and 'other' are considered to be equal in the base ring
 
-        Tests::
+        TESTS::
 
             >>> from integerperiodicfunction import *
             >>> from sage.rings.rational_field import QQ
@@ -210,7 +207,7 @@ class IntegerPeriodicFunctionElement(RingElement):
         r"""
         Return whether self is a non-zero element of the ring.
         
-        Tests::
+        TESTS::
 
             >>> from integerperiodicfunction import *
             >>> from sage.rings.rational_field import QQ
@@ -226,7 +223,7 @@ class IntegerPeriodicFunctionElement(RingElement):
         r"""
         Return the additive inverse of self
 
-        Tests::
+        TESTS::
 
             >>> from integerperiodicfunction import *
             >>> from sage.rings.rational_field import QQ
@@ -240,7 +237,7 @@ class IntegerPeriodicFunctionElement(RingElement):
         r"""
         Ring addition
         
-        Tests::
+        TESTS::
 
             >>> from integerperiodicfunction import *
             >>> from sage.rings.rational_field import QQ
@@ -258,7 +255,7 @@ class IntegerPeriodicFunctionElement(RingElement):
 
     def _sub_(self, other):
         r"""
-        Tests::
+        TESTS::
 
             >>> from integerperiodicfunction import *
             >>> from sage.rings.rational_field import QQ
@@ -274,7 +271,7 @@ class IntegerPeriodicFunctionElement(RingElement):
         r"""
         Ring multiplication and scalar multiplication
         
-        Tests::
+        TESTS::
 
             >>> from integerperiodicfunction import *
             >>> from sage.rings.rational_field import QQ
@@ -306,7 +303,7 @@ class IntegerPeriodicFunctionRing(UniqueRepresentation, CommutativeRing):
         r"""
         Return the base_ring of the base
 
-        Examples::
+        EXAMPLES::
 
             >>> from integerperiodicfunction import *
             >>> from sage.rings.rational_field import QQ
@@ -321,7 +318,7 @@ class IntegerPeriodicFunctionRing(UniqueRepresentation, CommutativeRing):
     def characteristic(self):
         r"""
         Return the characteristic of the base
-        Examples::
+        EXAMPLES::
 
             >>> from integerperiodicfunction import *
             >>> from sage.rings.rational_field import QQ
@@ -337,7 +334,7 @@ class IntegerPeriodicFunctionRing(UniqueRepresentation, CommutativeRing):
         r"""
         Handles the automatic coercion of objects to IntegerPeriodicFunctionElement
 
-        Examples::
+        EXAMPLES::
 
             >>> from integerperiodicfunction import *
             >>> from sage.rings.rational_field import QQ
@@ -370,7 +367,7 @@ class IntegerPeriodicFunctionRing(UniqueRepresentation, CommutativeRing):
         Return whether there is a coercion map from S to self.
         If so "self(s)" should work for all s in S
 
-        Tests::
+        TESTS::
 
             >>> from integerperiodicfunction import *
             >>> from sage.rings.rational_field import QQ
@@ -397,7 +394,7 @@ class IntegerPeriodicFunctionRing(UniqueRepresentation, CommutativeRing):
         r"""
         Return whether self is an integral domain, which is False
 
-        Tests::
+        TESTS::
 
             >>> from integerperiodicfunction import *
             >>> from sage.rings.rational_field import QQ
@@ -411,7 +408,7 @@ class IntegerPeriodicFunctionRing(UniqueRepresentation, CommutativeRing):
         r"""
         Return whether self is a unique factorization domain (UFD), which is False
 
-        Tests::
+        TESTS::
 
             >>> from integerperiodicfunction import *
             >>> from sage.rings.rational_field import QQ
@@ -435,30 +432,31 @@ class IntegerPeriodicFunctionFunctor(ConstructionFunctor):
         if isinstance(other, type(self)):
             return self
 
-def run_tests():
-    run_doctests()
+
+def _run_tests():
+    _run_doctests()
 
     from sage.rings.finite_rings.integer_mod_ring import IntegerModRing
     from sage.rings.integer_ring import ZZ
     from sage.rings.rational_field import QQ
     from sage.symbolic.ring import SR
     
-    run_TestSuites([IntegerModRing(19), ZZ, QQ, SR])
+    _run_TestSuites([IntegerModRing(19), ZZ, QQ, SR])
 
-def run_doctests():
+def _run_doctests():
     print("Doctests:\n")
     import doctest
     doctest.testmod()
 
-def run_TestSuites(base_rings):
+def _run_TestSuites(base_rings):
     print("\n\nTestSuites\n")
     from sage.misc.sage_unittest import TestSuite
 
     for ring in base_rings:
         if ring in CommutativeRings():
-            print(f"\nTesting IPFR with {ring}")
+            print(f"\nTesting IntegerPeriodicFunctionRing with {ring}")
             ipfr = IntegerPeriodicFunctionRing(ring)
             TestSuite(ipfr)
 
 if __name__ == "__main__":
-    run_tests()
+    _run_tests()

@@ -245,18 +245,6 @@ class IntegerPeriodicFunctionElement(RingElement):
         add_constants = [self[k] + other[k] for k in range(add_period)]
         return self.__class__(self.parent(), add_constants)
 
-    def _radd_(self, other):
-        r"""
-        Tests::
-
-            >>> from integerperiodicfunction import *
-            >>> from sage.rings.rational_field import QQ
-            >>> ipfr = IntegerPeriodicFunctionRing(QQ)
-            >>> 2 + ipfr([1, 2, 3]) 
-            IntegerPeriodicFunctionElement(Ring of Integer Periodic Functions over Rational Field, [3, 4, 5])
-        """
-        return self.__add__(other)
-
     def _sub_(self, other):
         r"""
         Tests::
@@ -270,18 +258,6 @@ class IntegerPeriodicFunctionElement(RingElement):
             IntegerPeriodicFunctionElement(Ring of Integer Periodic Functions over Rational Field, [-1, 0, 1])
         """
         return self.__add__(-other)
-
-    def _rsub_(self, other):
-        r"""
-        Tests::
-
-            >>> from integerperiodicfunction import *
-            >>> from sage.rings.rational_field import QQ
-            >>> ipfr = IntegerPeriodicFunctionRing(QQ)
-            >>> 2 - ipfr([1, 2, 3]) 
-            IntegerPeriodicFunctionElement(Ring of Integer Periodic Functions over Rational Field, [1, 0, -1])
-        """
-        return (-self).__add__(other)
 
     def _mul_(self, other):
         r"""
@@ -302,19 +278,6 @@ class IntegerPeriodicFunctionElement(RingElement):
         mul_period = lcm(self._period, other.period())
         mul_constants = [self[k]*other[k] for k in range(mul_period)]
         return self.__class__(self.parent(), mul_constants)
-
-    def _rmul_(self, other):
-        r"""
-        Tests::
-
-            >>> from integerperiodicfunction import *
-            >>> from sage.rings.rational_field import QQ
-            >>> ipfr = IntegerPeriodicFunctionRing(QQ)
-            >>> 2 * ipfr([1, 0, 1])
-            IntegerPeriodicFunctionElement(Ring of Integer Periodic Functions over Rational Field, [2, 0, 2])
-        """
-        return self.__mul__(other)
-
 
 
 class IntegerPeriodicFunctionRing(UniqueRepresentation, CommutativeRing):

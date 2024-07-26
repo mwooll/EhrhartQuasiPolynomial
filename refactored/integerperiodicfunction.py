@@ -10,10 +10,6 @@ from sage.structure.unique_representation import UniqueRepresentation
 from sage.structure.element import RingElement
 
 
-import doctest
-from sage.misc.sage_unittest import TestSuite
-
-
 class IntegerPeriodicFunctionElement(RingElement):
     r"""
     An element of the Ring of Integer Periodic Functions.
@@ -188,6 +184,21 @@ class IntegerPeriodicFunctionElement(RingElement):
         return function_str
 
     def __eq__(self, other):
+        r"""
+        Return whether self and 'other' are considered to be equal in the base ring
+
+        Tests::
+
+            >>> from integerperiodicfunction import *
+            >>> from sage.rings.rational_field import QQ
+            >>> ipfr = IntegerPeriodicFunctionRing(QQ)
+            >>> ipfr.zero() == 0
+            True
+            >>> p = ipfr([1, 2, 3])
+            >>> q = ipfr([2, 3, 4])
+            >>> p+1 == q
+            True
+        """
         if isinstance(other, self.__class__):
             return self._period == other.period() and self._constants == other.constants()
         else:
@@ -424,11 +435,30 @@ class IntegerPeriodicFunctionFunctor(ConstructionFunctor):
         if isinstance(other, type(self)):
             return self
 
+def run_tests():
+    run_doctests()
+
+    from sage.rings.finite_rings.integer_mod_ring import IntegerModRing
+    from sage.rings.integer_ring import ZZ
+    from sage.rings.rational_field import QQ
+    from sage.symbolic.ring import SR
+    
+    run_TestSuites([IntegerModRing(19), ZZ, QQ, SR])
+
+def run_doctests():
+    print("Doctests:\n")
+    import doctest
+    doctest.testmod()
+
+def run_TestSuites(base_rings):
+    print("\n\nTestSuites\n")
+    from sage.misc.sage_unittest import TestSuite
+
+    for ring in base_rings:
+        if ring in CommutativeRings():
+            print(f"\nTesting IPFR with {ring}")
+            ipfr = IntegerPeriodicFunctionRing(ring)
+            TestSuite(ipfr)
 
 if __name__ == "__main__":
-    from sage.rings.rational_field import QQ
-    
-    ipfr = IntegerPeriodicFunctionRing(QQ)
-    TestSuite(ipfr).run()
-    
-    doctest.testmod()
+    run_tests()

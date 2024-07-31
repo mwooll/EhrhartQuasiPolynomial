@@ -1,4 +1,4 @@
-from ehrhart_polynomial import IntegerPeriodicFunctionRing
+from ehrhart_polynomial.integerperiodicfunction import IntegerPeriodicFunctionRing
 
 from sage.arith.functions import lcm
 
@@ -151,7 +151,10 @@ class QuasiPolynomialElement(RingElement):
             sage: qpr([[0, 1]]) == qpr([0, 1])
             False
         """
-        return self._coefficients == other.coefficients()
+        if isinstance(other, self.__class__):
+            return self._coefficients == other.coefficients()
+        else:
+            return self._degree == 1 and self._coefficients[0] == other
 
     def __bool__(self):
         r"""
@@ -317,7 +320,7 @@ class QuasiPolynomialRing(UniqueRepresentation, CommutativeRing):
         r"""
         Return a ConstructionFunctor
         """
-        return QuasiPolynomialFunctor(self._reduction[1][1:], self._reduction[2]), self.base()
+        return QuasiPolynomialFunctor(self._reduction[1][1:], self._reduction[2]), self.base().base_ring()
 
     def is_integral_domain(self):
         r"""
@@ -361,24 +364,20 @@ class QuasiPolynomialFunctor(ConstructionFunctor):
             return self
 
 
-def _run_tests():
+def _run_TestSuites():
     from sage.rings.finite_rings.integer_mod_ring import IntegerModRing
     from sage.rings.integer_ring import ZZ
     from sage.rings.rational_field import QQ
     from sage.symbolic.ring import SR
-    
-    _run_TestSuites([IntegerModRing(19), ZZ, QQ, SR])
 
-
-def _run_TestSuites(base_rings):
-    print("TestSuites\n")
     from sage.misc.sage_unittest import TestSuite
 
-    for ring in base_rings:
+    print("TestSuites\n")
+    for ring in [IntegerModRing(19), ZZ, QQ, SR]:
         if ring in CommutativeRings():
             print(f"\n\tTesting QuasiPolynomialRing with {ring}")
-            ipfr = QuasiPolynomialRing(ring)
-            TestSuite(ipfr)
+            qpr = QuasiPolynomialRing(ring)
+            TestSuite(qpr).run()
 
 if __name__ == "__main__":
-    _run_tests()
+    _run_TestSuites()

@@ -1,8 +1,8 @@
 from itertools import product
 from collections import deque
 
-from .integerperiodicfunction import IntegerPeriodicFunctionRing
-from .quasipolynomial import QuasiPolynomialRing
+from ehrhart_polynomial.integerperiodicfunction import IntegerPeriodicFunctionRing
+from ehrhart_polynomial.quasipolynomial import QuasiPolynomialRing
 
 import sage.all
 from sage.arith.misc import gcd

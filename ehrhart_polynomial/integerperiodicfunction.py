@@ -207,8 +207,10 @@ class IntegerPeriodicFunctionElement(RingElement):
             False
             sage: bool(ipfr([1, 2, 3]))
             True
+            sage: bool(IntegerPeriodicFunctionRing(SR).zero())
+            False
         """
-        return self._period != 1 or self._constants[0] != self.parent().base().zero()
+        return self._period != 1 or bool(self._constants[0] != self.parent().base().zero())
 
     def _neg_(self):
         r"""
@@ -411,24 +413,20 @@ class IntegerPeriodicFunctionFunctor(ConstructionFunctor):
             return self
 
 
-def _run_tests():
+
+def _run_TestSuites():
     from sage.rings.finite_rings.integer_mod_ring import IntegerModRing
     from sage.rings.integer_ring import ZZ
     from sage.rings.rational_field import QQ
     from sage.symbolic.ring import SR
-    
-    _run_TestSuites([IntegerModRing(19), ZZ, QQ, SR])
 
-
-def _run_TestSuites(base_rings):
-    print("TestSuites:")
     from sage.misc.sage_unittest import TestSuite
 
-    for ring in base_rings:
-        if ring in CommutativeRings():
-            print(f"\n\tTesting IntegerPeriodicFunctionRing with {ring}")
-            ipfr = IntegerPeriodicFunctionRing(ring)
-            TestSuite(ipfr)
+    print("TestSuites:")
+    for ring in [IntegerModRing(19), ZZ, QQ, SR]:
+        print(f"\n\tTesting IntegerPeriodicFunctionRing with {ring}")
+        ipfr = IntegerPeriodicFunctionRing(ring)
+        TestSuite(ipfr).run(verbose=True)
 
 if __name__ == "__main__":
-    _run_tests()
+    _run_TestSuites()

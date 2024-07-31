@@ -1,8 +1,8 @@
 import sage.all
 
-from .integerperiodicfunction import IntegerPeriodicFunctionRing
+from .integerperiodicfunction import IntegerPeriodicFunction
 
-from .quasipolynomial import QuasiPolynomialRing
+from .quasipolynomial import QuasiPolynomial
 
 from .ehrhart_polynomial import (ehrhart_polynomial,
                                  interpolate_polynomial, construct_quasipolynomial,
@@ -12,4 +12,3 @@ from .ehrhart_polynomial import (ehrhart_polynomial,
                                  simplify_vertices, drop_constant_dimensions,
                                  drop_dimensions, scale_down_vertices)
 
-from .gfan import secondary_fan

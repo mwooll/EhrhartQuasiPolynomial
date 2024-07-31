@@ -1,45 +1,55 @@
-from math import lcm
+from ehrhart_polynomial import IntegerPeriodicFunctionRing
 
-from .integerperiodicfunction import IntegerPeriodicFunction
+from sage.arith.functions import lcm
 
-from sage.rings.polynomial.polynomial_ring_constructor import PolynomialRing
+from sage.categories.pushout import ConstructionFunctor
+from sage.categories.commutative_rings import CommutativeRings
 
-# commutative algebra fromework from adm-cycles?
+from sage.rings.ring import CommutativeRing
 
-class QuasiPolynomial():
-    def __init__(self, coefficients=None):
+from sage.structure.coerce_maps import CallableConvertMap
+from sage.structure.element import RingElement
+from sage.structure.unique_representation import UniqueRepresentation
+
+
+
+class QuasiPolynomialElement(RingElement):
+    r"""
+    An element of the Ring of Quasi-Polynomial.
+
+    This class should not be used to construct elements, rather construct an
+    instance of the parent class 'QuasiPolynomialRing' and let that
+    construct the elements, as in the examples below.
+
+
+    EXAMPLES::
+        
+        sage: from ehrhart_polynomial import QuasiPolynomialRing
+        sage: qpr = QuasiPolynomialRing(QQ)
+        sage: qpr()
+        QuasiPolynomialElement(Ring of Quasi Polynomials over Rational Field, [[0]])
+        sage: print(qpr([[0, 1], 2, 3])) # doctest: +NORMALIZE_WHITESPACE
+        QuasiPolynomial given by
+        [0, 1] + [2]*k + [3]*k^2
+    """
+    def __init__(self, parent, coefficients=None):
+        r"""
+        INPUT:
+            - parent : instance of 'QuasiPolynomialRing'
+            - coefficients : iterable of elements of 'parent.base()' (default=None)
+        """
+        base = parent.base()
         if coefficients is None:
-            coefficients = [0]
+            coefficients = [base(0)]
+        elif not hasattr(coefficients, "__iter__"):
+            coefficients = [base(coefficients)]
         else:
-            if not isinstance(coefficients, (tuple, list)):
-                return TypeError("coefficients must be instance of list or tuple, or be None"
-                                 + f", but has type {type(coefficients)}")
+            coefficients = [base(c) for c in coefficients]
+        self._coefficients, self._degree = self._reduce_coefficients(coefficients)
+        self._period = self._calculate_peroid()
 
-        for index, coef in enumerate(coefficients):
-            if isinstance(coef, (int, float)):
-                coefficients[index] = IntegerPeriodicFunction([coef])
+        RingElement.__init__(self, parent)
 
-            elif isinstance(coef, IntegerPeriodicFunction):
-                pass
-
-            elif hasattr(coef, "__int__"):
-                coefficients[index] = IntegerPeriodicFunction([int(coef)])
-
-            elif hasattr(coef, "__float__"):
-                coefficients[index] = IntegerPeriodicFunction([float(coef)])
-
-            else:
-                raise TypeError("elements of coefficients must be instances of "
-                                + "IntegerPeriodicFunction, int or float,"
-                                + " or implement __int__ or __float__"
-                                + f"but is has type {type(coef)}")
-
-        self.coefficients, self.degree = self._reduce_coefficients(coefficients)
-        self.period = self._calculate_peroid()
-
-    """
-    methods called in __init__
-    """
     def _reduce_coefficients(self, coefficients):
         degree = len(coefficients)-1
         while degree > 0 and coefficients[degree] == 0:
@@ -49,130 +59,326 @@ class QuasiPolynomial():
         return coefficients, degree
 
     def _calculate_peroid(self):
-        periods = (coef.period for coef in self.coefficients)
-        period = lcm(*periods)
+        periods = [coef.period() for coef in self._coefficients]
+        period = lcm(periods)
         return period
 
-    """
-    use class obejct as function
-    """
     def __call__(self, value):
+        r"""
+        Return self evaluated at 'value'
+
+        EXAMPLES::
+
+            sage: from ehrhart_polynomial import QuasiPolynomialRing
+            sage: qpr = QuasiPolynomialRing(QQ)
+            sage: q = qpr([2, [0, 1]])
+            sage: q(0)
+            2
+            sage: q(1)
+            3
+            sage: q(2)
+            2
+        """
         result = 0
-        for power, coef in enumerate(self.coefficients):
+        for power, coef in enumerate(self._coefficients):
             result += coef(value) * value**power
         return result
 
     def coefficients(self):
-        return self.coefficients
+        r"""
+        Return the coefficients of self
 
-    """
-    standard dunder methods
-    """
+        EXAMPLES::
+
+            sage: from ehrhart_polynomial import QuasiPolynomialRing
+            sage: qpr = QuasiPolynomialRing(QQ)
+            sage: qpr([2, [0, 1]]).coefficients()
+            [IntegerPeriodicFunctionElement(Ring of Integer Periodic Functions over Rational Field, [2]), IntegerPeriodicFunctionElement(Ring of Integer Periodic Functions over Rational Field, [0, 1])]
+        """
+        return self._coefficients
+
+    def degree(self):
+        r"""
+        Return the degree of self
+
+        EXAMPLES::
+
+            sage: from ehrhart_polynomial import QuasiPolynomialRing
+            sage: qpr = QuasiPolynomialRing(QQ)
+            sage: qpr([2, [0, 1]]).degree()
+            1
+            sage: qpr().degree()
+            0
+        """
+        return self._degree
+
+    def period(self):
+        r"""
+        Return the period of self
+
+        EXAMPLES::
+
+            sage: from ehrhart_polynomial import QuasiPolynomialRing
+            sage: qpr = QuasiPolynomialRing(QQ)
+            sage: qpr().period()
+            1
+            sage: qpr([[1, 2, 3], [1, 2]]).period()
+            6
+        """
+        return self._period
+
     def __str__(self):
         function_str = "QuasiPolynomial given by \n"
-        function_str += f"{self.coefficients[0].coefficient_repr('k')}"
-        for power, coef in enumerate(self.coefficients[1:]):
-            function_str += f" + {coef.coefficient_repr('k')}*k" + f"^{power+1}"*(power>0)
+        function_str += f"{self._coefficients[0].constants()}"
+        for power, coef in enumerate(self._coefficients[1:]):
+            function_str += f" + {coef.constants()}*k" + f"^{power+1}"*(power>0)
         return function_str
 
     def __repr__(self):
-        return f"QuasiPolynomial({self.coefficients})"
+        coefficients = [coef.constants() for coef in self._coefficients]
+        return f"QuasiPolynomialElement({self.parent()}, {coefficients})"
 
-    """
-    comparison operators
-    """
     def __eq__(self, other):
-        if isinstance(other, QuasiPolynomial):
-            return self.coefficients == other.coefficients
+        r"""
+        Return whether self and other are considered equal in the ring
 
-        if isinstance(other, int):
-            return self.degree == 0 and self.coefficients[0] == other
+        TESTS::
+
+            sage: from ehrhart_polynomial import QuasiPolynomialRing
+            sage: qpr = QuasiPolynomialRing(QQ)
+            sage: qpr.zero() == qpr() == qpr([0])
+            True
+            sage: qpr([[0, 1]]) == qpr([0, 1])
+            False
+        """
+        return self._coefficients == other.coefficients()
+
+    def __bool__(self):
+        r"""
+        Return whether self is a non-zero element of the ring.
+
+        TESTS::
+
+            sage: from ehrhart_polynomial import QuasiPolynomialRing
+            sage: qpr = QuasiPolynomialRing(QQ)
+            sage: bool(qpr.zero())
+            False
+            sage: bool(qpr([[0, 1]]))
+            True
+        """
+        return (self._degree != 0 or self._period != 1
+                or bool(self._coefficients[0]))
+
+    def _neg_(self):
+        r"""
+        Return the additive inverse of self
+
+        TESTS::
+
+            sage: from ehrhart_polynomial import QuasiPolynomialRing
+            sage: qpr = QuasiPolynomialRing(QQ)
+            sage: -qpr([[0, 1], 2])
+            QuasiPolynomialElement(Ring of Quasi Polynomials over Rational Field, [[0, -1], [-2]])
+        """
+        return self.__class__(self.parent(), [-c for c in self._coefficients])
+
+    def _add_(self, other):
+        r"""
+        Ring addition
+
+        TESTS::
+
+            sage: from ehrhart_polynomial import QuasiPolynomialRing
+            sage: qpr = QuasiPolynomialRing(QQ)
+            sage: q = qpr([[1, 2], [1, 2]])
+            sage: q + 1
+            QuasiPolynomialElement(Ring of Quasi Polynomials over Rational Field, [[2, 3], [1, 2]])
+            sage: r = qpr([[1, 2, 3], [2, 1]])
+            sage: q + r
+            QuasiPolynomialElement(Ring of Quasi Polynomials over Rational Field, [[2, 4, 4, 3, 3, 5], [3]])
+        """
+        other_degree = other.degree()
+        other_coefs = other.coefficients()
+
+        len_coefs = max(self._degree, other_degree)+1
+        add_coefficients = [self.parent().base().zero()]*len_coefs
+        for idx, coef in enumerate(self._coefficients):
+            add_coefficients[idx] += coef
+        for idx, coef in enumerate(other_coefs):
+            add_coefficients[idx] += coef
+        return self.__class__(self.parent(), add_coefficients)
+
+    def _sub_(self, other):
+        r"""
+        TESTS::
+
+            sage: from ehrhart_polynomial import QuasiPolynomialRing
+            sage: qpr = QuasiPolynomialRing(QQ)
+            sage: q = qpr([[1, 2], [1, 2]])
+            sage: q - 1
+            QuasiPolynomialElement(Ring of Quasi Polynomials over Rational Field, [[0, 1], [1, 2]])
+            sage: r = qpr([[1, 2, 3], [2, 1]])
+            sage: q - r
+            QuasiPolynomialElement(Ring of Quasi Polynomials over Rational Field, [[0, 0, -2, 1, -1, -1], [-1, 1]])
+        """
+        return self.__add__(-other)
+
+    def _mul_(self, other):
+        r"""
+        Ring multiplication and scalar multiplication
+
+        TESTS::
+
+            sage: from ehrhart_polynomial import QuasiPolynomialRing
+            sage: qpr = QuasiPolynomialRing(QQ)
+            sage: q = qpr([[1, 2], [1, 2]])
+            sage: q * 2
+            QuasiPolynomialElement(Ring of Quasi Polynomials over Rational Field, [[2, 4], [2, 4]])
+            sage: r = qpr([[1, 2, 3], [2, 1]])
+            sage: q * r # doctest: +NORMALIZE_WHITESPACE
+            QuasiPolynomialElement(Ring of Quasi Polynomials over Rational Field, 
+                                   [[1, 4, 3, 2, 2, 6], [3, 6, 5, 4, 4, 8], [2]])
+        """
+        mul_coefficients = [self.parent().base().zero()]*(self._degree + other.degree() + 1)
+        for self_power, self_coef in enumerate(self._coefficients):
+            for  other_power, other_coef in enumerate(other.coefficients()):
+                mul_coefficients[self_power + other_power] += self_coef*other_coef
+        return self.__class__(self.parent(), mul_coefficients)
+
+
+class QuasiPolynomialRing(UniqueRepresentation, CommutativeRing):
+    Element = QuasiPolynomialElement
+    def __init__(self, base_ring, num_variables=1):
+        base = IntegerPeriodicFunctionRing(base_ring)
+        if base not in CommutativeRings():
+            raise ValueError(f"{base} is not a commutative ring.")
+        CommutativeRing.__init__(self, base)
+
+    def _repr_(self):
+        return f"Ring of Quasi Polynomials over {self.base().base_ring()}"
+
+    def base_ring(self):
+        r"""
+        Return the base ring of the underlying IntegerPeriodicFunctionRing.
+
+        EXAMPLES::
+
+            sage: from ehrhart_polynomial import QuasiPolynomialRing
+            sage: QuasiPolynomialRing(QQ).base_ring()
+            Rational Field
+            sage: QuasiPolynomialRing(SR).base_ring()
+            Symbolic Ring
+        """
+        return self.base().base_ring()
+
+    def characteristic(self):
+        r"""
+        Return the characteristic of the underlying IntegerPeriodicFunctionRing.
+
+        EXAMPLES::
+
+            sage: from ehrhart_polynomial import QuasiPolynomialRing
+            sage: QuasiPolynomialRing(QQ).characteristic()
+            0
+            sage: QuasiPolynomialRing(IntegerModRing(19)).characteristic()
+            19
+        """
+        return self.base().characteristic()
+
+    def _element_constructor_(self, *args, **kwds):
+        if len(args) != 1:
+            return self.element_class(self, *args, **kwds)
+        x = args[0]
+        try:
+            if hasattr(x, "constants"):
+                x = [x.constants()]
+                P = x[0].parent()
+            elif hasattr(x, "__iter__"):
+                P = x[0].parent()
+            else:
+                P = x.parent()
+            if P.is_subring(self.base().base_ring()):
+                P = self
+        except AttributeError:
+            P = self
+        return self.element_class(P, x, **kwds)
+
+    def _coerce_map_from_(self, S):
+        r"""
+        Return whether there is a coercion map from S to self.
+        If so "self(s)" should work for all s in S
+        """
+        if self.base().base_ring().has_coerce_map_from(S):
+            return True
+        if isinstance(S, IntegerPeriodicFunctionRing):
+            return True
+
+    def construction(self):
+        r"""
+        Return a ConstructionFunctor
+        """
+        return QuasiPolynomialFunctor(self._reduction[1][1:], self._reduction[2]), self.base()
+
+    def is_integral_domain(self):
+        r"""
+        Return whether self is an integral domain, which is False
+
+        TESTS::
+
+            sage: from ehrhart_polynomial import QuasiPolynomialRing
+            sage: qpr = QuasiPolynomialRing(QQ)
+            sage: qpr.is_integral_domain()
+            False
+        """
+        return False
+
+    def is_unique_factorization_domain(self):
+        r"""
+        Return whether self is a unique factorization domain (UFD), which is False
+
+        TESTS::
+
+            sage: from ehrhart_polynomial import QuasiPolynomialRing
+            sage: qpr = QuasiPolynomialRing(QQ)
+            sage: qpr.is_unique_factorization_domain()
+            False
+        """
         return False
 
 
-    """
-    math support
-    """
-    def NotImplementedError_message(self, other):
-        return ("other must be instance of QuasiPolynomial, "
-                + "IntegerPeriodicFunction, int or float or implement",
-                + f"__int__ or __float__ but has type {type(other)}")
+class QuasiPolynomialFunctor(ConstructionFunctor):
+    rank = 10
+    def __init__(self, args=None, kwds=None):
+        self.args = args or ()
+        self.kwds = kwds or {}
+        ConstructionFunctor.__init__(self, CommutativeRings(), CommutativeRings())
 
-    def __neg__(self):
-        return QuasiPolynomial([-c for c in self.coefficients])
+    def _apply_functor(self, R):
+        return QuasiPolynomialRing(R, *self.args, **self.kwds)
 
-    def __add__(self, other):
-        if isinstance(other, QuasiPolynomial):
-            add_coefficients = []
-            if self.degree > other.degree:
-                sum_coefficients = self.coefficients.copy()
-                add_coefficients = other.coefficients
-            else:
-                sum_coefficients = other.coefficients.copy()
-                add_coefficients = self.coefficients
+    def merge(self, other):
+        if isinstance(other, type(self)):
+            return self
 
-            for index, coef in enumerate(add_coefficients):
-                sum_coefficients[index] += coef
 
-            return QuasiPolynomial(sum_coefficients)
+def _run_tests():
+    from sage.rings.finite_rings.integer_mod_ring import IntegerModRing
+    from sage.rings.integer_ring import ZZ
+    from sage.rings.rational_field import QQ
+    from sage.symbolic.ring import SR
+    
+    _run_TestSuites([IntegerModRing(19), ZZ, QQ, SR])
 
-        elif isinstance(other, (int, float, IntegerPeriodicFunction)):
-            return QuasiPolynomial([c + other*(index==0)
-                                    for index, c in enumerate(self.coefficients)])
 
-        elif hasattr(other, "__int__"):
-            return QuasiPolynomial([c + int(other)*(index==0)
-                                    for index, c in enumerate(self.coefficients)])
+def _run_TestSuites(base_rings):
+    print("TestSuites\n")
+    from sage.misc.sage_unittest import TestSuite
 
-        elif hasattr(other, "__float__"):
-            return QuasiPolynomial([c + float(other)*(index==0)
-                                    for index, c in enumerate(self.coefficients)])
+    for ring in base_rings:
+        if ring in CommutativeRings():
+            print(f"\n\tTesting QuasiPolynomialRing with {ring}")
+            ipfr = QuasiPolynomialRing(ring)
+            TestSuite(ipfr)
 
-        else:
-            return NotImplemented
-
-    def __radd__(self, other):
-        value = self.__add__(other)
-        if value is not NotImplemented:
-            return value
-
-        raise NotImplementedError(self.NotImplementedError_message(other))
-
-    def __sub__(self, other):
-        return self.__add__(-other)
-
-    def __rsub__(self, other):
-        return (-self).__add__(other)
-
-    def __mul__(self, other):
-        if isinstance(other, (int, float, IntegerPeriodicFunction)):
-            return QuasiPolynomial([other*c for c in self.coefficients])
-
-        elif isinstance(other, QuasiPolynomial):
-            mul_coefficients = [0]*(self.degree + other.degree + 1)
-            for self_power, self_coef in enumerate(self.coefficients):
-                for  other_power, other_coef in enumerate(other.coefficients):
-                    mul_coefficients[self_power + other_power] += self_coef*other_coef
-            return QuasiPolynomial(mul_coefficients)
-
-        elif hasattr(other, "__int__"):
-            return QuasiPolynomial([c*int(other) for c in self.coefficients])
-
-        elif hasattr(other, "__float__"):
-            return QuasiPolynomial([c*float(other) for c in self.coefficients])
-
-        else:
-            return NotImplemented
-
-    def __rmul__(self, other):
-        value = self.__mul__(other)
-        if value is not NotImplemented:
-            return value
-
-        raise NotImplementedError(self.NotImplementedError_message(other))
-
-    def __truediv__(self, other):
-        return self.__mul__(1/other)
-
-    def __rtruediv__(self, other):
-        raise NotImplementedError("dividing by a QuasiPolynomial seems illegal")
+if __name__ == "__main__":
+    _run_tests()

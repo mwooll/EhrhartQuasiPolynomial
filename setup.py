@@ -8,7 +8,7 @@ def readfile(filename):
 
 setup(
     name="ehrhart_polynomial",
-    version="0.0.4",
+    version="0.1.0",
     description="Package to calculate the Ehrhart (quasi)polynomial of convex polytopes",
     long_description=readfile("README.md"), # get the long description from the README
 
@@ -21,6 +21,6 @@ setup(
       "License :: OSI Approved :: GNU General Public License v2 or later (GPLv2+)",
       "Programming Language :: Python :: 3"
     ], 
-    keywords = "SageMath polytope ehrhart ",
+    keywords = "SageMath polytope ehrhart quasi-polynomial",
     packages = ["ehrhart_polynomial"],
 )

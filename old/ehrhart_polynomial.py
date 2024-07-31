@@ -1,8 +1,8 @@
 from itertools import product
 from collections import deque
 
-from .integerperiodicfunction import IntegerPeriodicFunctionRing
-from .quasipolynomial import QuasiPolynomialRing
+from .integerperiodicfunction import IntegerPeriodicFunction
+from .quasipolynomial import QuasiPolynomial
 
 import sage.all
 from sage.arith.misc import gcd
@@ -32,7 +32,7 @@ def interpolate_polynomial(points, period, scale_factor):
         polynomial = R.lagrange_polynomial(points)
         polynomial = polynomial(scale_factor*x)
         coefs = [float(c) for c in polynomial.coefficients(sparse=False)]
-        return QuasiPolynomialRing(coefs)
+        return QuasiPolynomial(coefs)
 
     polynomials = [0]*period
     for k in range(period):
@@ -55,9 +55,9 @@ def construct_quasipolynomial(polynomials, period, scale_factor):
         for index, poly in enumerate(polynomials):
             if degree <= degrees[index]:
                 periodic_values[index] = poly.coefficients()[degree]
-        periodic_coefficients[degree] = IntegerPeriodicFunctionRing(periodic_values)
+        periodic_coefficients[degree] = IntegerPeriodicFunction(periodic_values)
 
-    return QuasiPolynomialRing(periodic_coefficients)
+    return QuasiPolynomial(periodic_coefficients)
 
 
 # points contained

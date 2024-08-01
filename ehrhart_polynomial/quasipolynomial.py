@@ -1,4 +1,4 @@
-from ehrhart_polynomial.integerperiodicfunction import IntegerPeriodicFunctionRing
+from .integerperiodicfunction import IntegerPeriodicFunctionRing
 
 from sage.arith.functions import lcm
 
@@ -24,7 +24,7 @@ class QuasiPolynomialElement(RingElement):
 
     EXAMPLES::
         
-        sage: from ehrhart_polynomial import QuasiPolynomialRing
+        sage: from ehrhart_polynomial.quasipolynomial import QuasiPolynomialRing
         sage: qpr = QuasiPolynomialRing(QQ)
         sage: qpr()
         QuasiPolynomialElement(Ring of Quasi Polynomials over Rational Field, [[0]])
@@ -69,7 +69,7 @@ class QuasiPolynomialElement(RingElement):
 
         EXAMPLES::
 
-            sage: from ehrhart_polynomial import QuasiPolynomialRing
+            sage: from ehrhart_polynomial.quasipolynomial import QuasiPolynomialRing
             sage: qpr = QuasiPolynomialRing(QQ)
             sage: q = qpr([2, [0, 1]])
             sage: q(0)
@@ -90,7 +90,7 @@ class QuasiPolynomialElement(RingElement):
 
         EXAMPLES::
 
-            sage: from ehrhart_polynomial import QuasiPolynomialRing
+            sage: from ehrhart_polynomial.quasipolynomial import QuasiPolynomialRing
             sage: qpr = QuasiPolynomialRing(QQ)
             sage: qpr([2, [0, 1]]).coefficients()
             [IntegerPeriodicFunctionElement(Ring of Integer Periodic Functions over Rational Field, [2]), IntegerPeriodicFunctionElement(Ring of Integer Periodic Functions over Rational Field, [0, 1])]
@@ -103,7 +103,7 @@ class QuasiPolynomialElement(RingElement):
 
         EXAMPLES::
 
-            sage: from ehrhart_polynomial import QuasiPolynomialRing
+            sage: from ehrhart_polynomial.quasipolynomial import QuasiPolynomialRing
             sage: qpr = QuasiPolynomialRing(QQ)
             sage: qpr([2, [0, 1]]).degree()
             1
@@ -118,7 +118,7 @@ class QuasiPolynomialElement(RingElement):
 
         EXAMPLES::
 
-            sage: from ehrhart_polynomial import QuasiPolynomialRing
+            sage: from ehrhart_polynomial.quasipolynomial import QuasiPolynomialRing
             sage: qpr = QuasiPolynomialRing(QQ)
             sage: qpr().period()
             1
@@ -144,7 +144,7 @@ class QuasiPolynomialElement(RingElement):
 
         TESTS::
 
-            sage: from ehrhart_polynomial import QuasiPolynomialRing
+            sage: from ehrhart_polynomial.quasipolynomial import QuasiPolynomialRing
             sage: qpr = QuasiPolynomialRing(QQ)
             sage: qpr.zero() == qpr() == qpr([0])
             True
@@ -162,7 +162,7 @@ class QuasiPolynomialElement(RingElement):
 
         TESTS::
 
-            sage: from ehrhart_polynomial import QuasiPolynomialRing
+            sage: from ehrhart_polynomial.quasipolynomial import QuasiPolynomialRing
             sage: qpr = QuasiPolynomialRing(QQ)
             sage: bool(qpr.zero())
             False
@@ -178,7 +178,7 @@ class QuasiPolynomialElement(RingElement):
 
         TESTS::
 
-            sage: from ehrhart_polynomial import QuasiPolynomialRing
+            sage: from ehrhart_polynomial.quasipolynomial import QuasiPolynomialRing
             sage: qpr = QuasiPolynomialRing(QQ)
             sage: -qpr([[0, 1], 2])
             QuasiPolynomialElement(Ring of Quasi Polynomials over Rational Field, [[0, -1], [-2]])
@@ -191,7 +191,7 @@ class QuasiPolynomialElement(RingElement):
 
         TESTS::
 
-            sage: from ehrhart_polynomial import QuasiPolynomialRing
+            sage: from ehrhart_polynomial.quasipolynomial import QuasiPolynomialRing
             sage: qpr = QuasiPolynomialRing(QQ)
             sage: q = qpr([[1, 2], [1, 2]])
             sage: q + 1
@@ -215,7 +215,7 @@ class QuasiPolynomialElement(RingElement):
         r"""
         TESTS::
 
-            sage: from ehrhart_polynomial import QuasiPolynomialRing
+            sage: from ehrhart_polynomial.quasipolynomial import QuasiPolynomialRing
             sage: qpr = QuasiPolynomialRing(QQ)
             sage: q = qpr([[1, 2], [1, 2]])
             sage: q - 1
@@ -232,7 +232,7 @@ class QuasiPolynomialElement(RingElement):
 
         TESTS::
 
-            sage: from ehrhart_polynomial import QuasiPolynomialRing
+            sage: from ehrhart_polynomial.quasipolynomial import QuasiPolynomialRing
             sage: qpr = QuasiPolynomialRing(QQ)
             sage: q = qpr([[1, 2], [1, 2]])
             sage: q * 2
@@ -266,7 +266,7 @@ class QuasiPolynomialRing(UniqueRepresentation, CommutativeRing):
 
         EXAMPLES::
 
-            sage: from ehrhart_polynomial import QuasiPolynomialRing
+            sage: from ehrhart_polynomial.quasipolynomial import QuasiPolynomialRing
             sage: QuasiPolynomialRing(QQ).base_ring()
             Rational Field
             sage: QuasiPolynomialRing(SR).base_ring()
@@ -280,7 +280,7 @@ class QuasiPolynomialRing(UniqueRepresentation, CommutativeRing):
 
         EXAMPLES::
 
-            sage: from ehrhart_polynomial import QuasiPolynomialRing
+            sage: from ehrhart_polynomial.quasipolynomial import QuasiPolynomialRing
             sage: QuasiPolynomialRing(QQ).characteristic()
             0
             sage: QuasiPolynomialRing(IntegerModRing(19)).characteristic()
@@ -328,7 +328,7 @@ class QuasiPolynomialRing(UniqueRepresentation, CommutativeRing):
 
         TESTS::
 
-            sage: from ehrhart_polynomial import QuasiPolynomialRing
+            sage: from ehrhart_polynomial.quasipolynomial import QuasiPolynomialRing
             sage: qpr = QuasiPolynomialRing(QQ)
             sage: qpr.is_integral_domain()
             False
@@ -341,7 +341,7 @@ class QuasiPolynomialRing(UniqueRepresentation, CommutativeRing):
 
         TESTS::
 
-            sage: from ehrhart_polynomial import QuasiPolynomialRing
+            sage: from ehrhart_polynomial.quasipolynomial import QuasiPolynomialRing
             sage: qpr = QuasiPolynomialRing(QQ)
             sage: qpr.is_unique_factorization_domain()
             False

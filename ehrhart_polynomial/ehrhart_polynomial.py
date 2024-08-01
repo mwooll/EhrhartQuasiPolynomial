@@ -1,7 +1,6 @@
 from itertools import product
 from collections import deque
 
-from ehrhart_polynomial.integerperiodicfunction import IntegerPeriodicFunctionRing
 from ehrhart_polynomial.quasipolynomial import QuasiPolynomialRing
 
 import sage.all
@@ -15,9 +14,10 @@ from sage.geometry.polyhedron.constructor import Polyhedron
 R = PolynomialRing(QQ, "x")
 x = R.gen()
 
+QPR = QuasiPolynomialRing(QQ)
 
 # calculate ehrhart polynomial
-def ehrhart_polynomial(vertices, simplify=False):
+def ehrhart_polynomial(vertices, simplify=True):
     y_values, scale_factor, period = points_contained_sequence(vertices, simplify)
 
     interpolation_points = [(k+1, y) for k, y in enumerate(y_values)]
@@ -32,7 +32,7 @@ def interpolate_polynomial(points, period, scale_factor):
         polynomial = R.lagrange_polynomial(points)
         polynomial = polynomial(scale_factor*x)
         coefs = [float(c) for c in polynomial.coefficients(sparse=False)]
-        return QuasiPolynomialRing(coefs)
+        return QPR(coefs)
 
     polynomials = [0]*period
     for k in range(period):
@@ -55,9 +55,9 @@ def construct_quasipolynomial(polynomials, period, scale_factor):
         for index, poly in enumerate(polynomials):
             if degree <= degrees[index]:
                 periodic_values[index] = poly.coefficients()[degree]
-        periodic_coefficients[degree] = IntegerPeriodicFunctionRing(periodic_values)
+        periodic_coefficients[degree] = periodic_values
 
-    return QuasiPolynomialRing(periodic_coefficients)
+    return QPR(periodic_coefficients)
 
 
 # points contained

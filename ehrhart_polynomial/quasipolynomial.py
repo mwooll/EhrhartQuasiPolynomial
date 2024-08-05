@@ -3,6 +3,7 @@ from .integerperiodicfunction import IntegerPeriodicFunctionRing
 from sage.arith.functions import lcm
 from sage.categories.pushout import ConstructionFunctor
 from sage.categories.commutative_rings import CommutativeRings
+from sage.rings.polynomial.polynomial_ring_constructor import PolynomialRing
 from sage.rings.ring import CommutativeRing
 from sage.structure.element import RingElement
 from sage.structure.unique_representation import UniqueRepresentation
@@ -146,11 +147,15 @@ class QuasiPolynomialElement(RingElement):
             True
             sage: qpr([[0, 1]]) == qpr([0, 1])
             False
+            sage: qpr([1]) == 1
+            True
         """
         if isinstance(other, self.__class__):
             return self._coefficients == other.coefficients()
+        elif hasattr(other, "coefficients"):
+            return self._coefficients == other.coefficients()
         else:
-            return self._degree == 1 and self._coefficients[0] == other
+            return self._degree == 0 and self._coefficients[0] == other
 
     def __bool__(self):
         r"""

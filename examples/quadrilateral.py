@@ -1,4 +1,4 @@
-from ehrhart_polynomial import ehrhart_polynomial
+from ehrhart_polynomial import ehrhart_polynomial, QuasiPolynomialRing
 
 import sage.all
 from sage.rings.rational_field import QQ
@@ -29,7 +29,7 @@ def quadrilateral_formula(m, n):
     if m <= n:
         return 1 + 3*m/2*k + m**2*k**2/2
     if m > n:
-        return 1 + (1.0*m + 0.5*n)*k + (1.0*m*n - 0.5*n^2)*k**2
+        return 1 + (1.0*m + 0.5*n)*k + (1.0*m*n - 0.5*n**2)*k**2
 
 
 class TestQuadrilateral(TestCase):
@@ -73,3 +73,6 @@ class TestQuadrilateral(TestCase):
 
 if __name__ == "__main__":
     main()
+    # qpr = QuasiPolynomialRing(QQ)
+    # one = qpr([1])
+    # print(one == R([1]))

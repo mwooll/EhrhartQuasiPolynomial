@@ -1,11 +1,8 @@
 from sage.arith.functions import lcm
 from sage.arith.misc import factor
-
 from sage.categories.pushout import ConstructionFunctor
 from sage.categories.commutative_rings import CommutativeRings
-
 from sage.rings.ring import CommutativeRing
-
 from sage.structure.unique_representation import UniqueRepresentation
 from sage.structure.element import RingElement
 
@@ -412,21 +409,3 @@ class IntegerPeriodicFunctionFunctor(ConstructionFunctor):
         if isinstance(other, type(self)):
             return self
 
-
-
-def _run_TestSuites():
-    from sage.rings.finite_rings.integer_mod_ring import IntegerModRing
-    from sage.rings.integer_ring import ZZ
-    from sage.rings.rational_field import QQ
-    from sage.symbolic.ring import SR
-
-    from sage.misc.sage_unittest import TestSuite
-
-    print("TestSuites:")
-    for ring in [IntegerModRing(19), ZZ, QQ, SR]:
-        print(f"\n\tTesting IntegerPeriodicFunctionRing with {ring}")
-        ipfr = IntegerPeriodicFunctionRing(ring)
-        TestSuite(ipfr).run()
-
-if __name__ == "__main__":
-    _run_TestSuites()

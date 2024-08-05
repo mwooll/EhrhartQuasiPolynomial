@@ -1,13 +1,9 @@
 from .integerperiodicfunction import IntegerPeriodicFunctionRing
 
 from sage.arith.functions import lcm
-
 from sage.categories.pushout import ConstructionFunctor
 from sage.categories.commutative_rings import CommutativeRings
-
 from sage.rings.ring import CommutativeRing
-
-from sage.structure.coerce_maps import CallableConvertMap
 from sage.structure.element import RingElement
 from sage.structure.unique_representation import UniqueRepresentation
 
@@ -362,22 +358,3 @@ class QuasiPolynomialFunctor(ConstructionFunctor):
     def merge(self, other):
         if isinstance(other, type(self)):
             return self
-
-
-def _run_TestSuites():
-    from sage.rings.finite_rings.integer_mod_ring import IntegerModRing
-    from sage.rings.integer_ring import ZZ
-    from sage.rings.rational_field import QQ
-    from sage.symbolic.ring import SR
-
-    from sage.misc.sage_unittest import TestSuite
-
-    print("TestSuites\n")
-    for ring in [IntegerModRing(19), ZZ, QQ, SR]:
-        if ring in CommutativeRings():
-            print(f"\n\tTesting QuasiPolynomialRing with {ring}")
-            qpr = QuasiPolynomialRing(ring)
-            TestSuite(qpr).run()
-
-if __name__ == "__main__":
-    _run_TestSuites()

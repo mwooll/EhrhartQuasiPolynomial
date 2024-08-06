@@ -111,7 +111,15 @@ def _get_period(vertices):
 # bounding box
 def _get_bounding_extrema(vertices, dimension):
     r"""
-    Return the bounding box which encompasses 'vertices'
+    Return the bounding box which encompasses 'vertices'.
+
+    TESTS::
+
+        sage: from ehrhart_polynomial.ehrhart_polynomial import _get_bounding_extrema
+        sage: _get_bounding_extrema([[0, 0, 0], [-1, 0, 1]], 3)
+        ([-1, 0, 0], [0, 0, 1])
+        sage: _get_bounding_extrema([[-1, 1], [1, -1]], 2)
+        ([-1, -1], [1, 1])
     """
     columns = [[vertex[d] for vertex in vertices]
                for d in range(dimension)]
@@ -120,10 +128,37 @@ def _get_bounding_extrema(vertices, dimension):
     return mins, maxs
 
 def _get_bounding_box(mins, maxs, factor):
+    r"""
+    Return an iterator of the integral points between 'mins'*'factor' and
+    'maxs'*'factor'.
+
+    TESTS::
+
+        sage: from ehrhart_polynomial.ehrhart_polynomial import (_get_bounding_box,
+        ....:                                                    _get_bounding_extrema)
+        sage: mins, maxs = _get_bounding_extrema([[0, 0], [1, 1]], 2)
+        sage: list(_get_bounding_box(mins, maxs, 2)) # doctest: +NORMALIZE_WHITESPACE
+        [(0, 0), (0, 1), (0, 2),
+         (1, 0), (1, 1), (1, 2),
+         (2, 0), (2, 1), (2, 2)]
+    """
     return product(*[range(factor*mini, factor*maxi + 1)
                      for mini, maxi in zip(mins, maxs)])
 
 def _get_bounding_box_rational(mins, maxs, factor):
+    r"""
+    Return an iterator of the integral points between ceil('mins'*'factor') and
+    floor('maxs'*'factor').
+
+    TESTS::
+
+        sage: from ehrhart_polynomial.ehrhart_polynomial import (_get_bounding_box_rational,
+        ....:                                                    _get_bounding_extrema)
+        sage: mins, maxs = _get_bounding_extrema([[0, 0], [1/2, 3/2]], 2)
+        sage: list(_get_bounding_box_rational(mins, maxs, 2))
+        [(0, 0), (0, 1), (0, 2), (0, 3),
+         (1, 0), (1, 1), (1, 2), (1, 3)]
+    """
     return product(*[range(ceil(factor*mini), floor(factor*maxi) + 1)
                      for mini, maxi in zip(mins, maxs)])
 
@@ -131,8 +166,9 @@ def _get_bounding_box_rational(mins, maxs, factor):
 # simplify polytope
 def _simplify_vertices(vertices, dimension):
     r"""
-    Simplifies the vertices as much as possible.
-    Drop constant dimensions and scales down the remaining ones if possible.
+    Simplify the vertices as much as possible:
+        - drop constant dimensions
+        - scale down remaining dimensions
     
     Return simplified vertices, minimums and maximums over all dimensions, the new
     dimension of the vertices and the factor by which the vertices were scaled down.

@@ -1,7 +1,7 @@
 from itertools import product
 from collections import deque
 
-from ehrhart_polynomial.quasipolynomial import QuasiPolynomialRing
+from .quasipolynomial import QuasiPolynomialRing
 
 import sage.all
 from sage.arith.misc import gcd
@@ -34,7 +34,7 @@ def interpolate_polynomial(points, period, scale_factor):
         coefs = [float(c) for c in polynomial.coefficients(sparse=False)]
         return QPR(coefs)
 
-    polynomials = [0]*period
+    polynomials = [0]*period # rational polytopes
     for k in range(period):
         period_points = points[k::period]
         polynomials[k] = R.lagrange_polynomial(period_points)
@@ -66,7 +66,7 @@ def points_contained_sequence(vertices, simplify):
     polytope_period = get_period(vertices)
 
     if simplify and polytope_period == 1:
-        result = simplify_vertices(vertices, dimension)
+        result = _simplify_vertices(vertices, dimension)
         vertices, base_min, base_max, dimension, scale_factor = result
     else:
         base_min, base_max = get_bounding_extrema(vertices, dimension)
@@ -126,19 +126,52 @@ def get_bounding_box_rational(mins, maxs, factor):
 
 
 # simplify polytope
-def simplify_vertices(vertices, dimension):
-    vertices, mins, maxs, new_dim = drop_constant_dimensions(vertices, dimension)
-    new_vertices, scale_factor = scale_down_vertices(vertices)
+def _simplify_vertices(vertices, dimension):
+    r"""
+    Simplifies the vertices as much as possible.
+    Drop constant dimensions and scales down the remaining ones if possible.
+    
+    Return simplified vertices, minimums and maximums over all dimensions, the new
+    dimension of the vertices and the factor by which the vertices were scaled down.
+
+    Note: this function and the ones this function calls are somewhat designed for
+    speed and therefore do not test any input for validity. Hence, it is crucial
+    that all elements of 'vertices' have the same dimension and to get the wanted
+    bahavior 'dimension' should really be the dimension of the vertices.
+
+    TESTS::
+
+        sage: from ehrhart_polynomial.ehrhart_polynomial import _simplify_vertices
+        sage: _simplify_vertices([[0, 0, 1], [0, 0, 2]], 3)
+        ([[1], [2]], [1], [2], 1, 1)
+        sage: _simplify_vertices([[5, 25], [15, 10]], 2)
+        ([[1, 5], [3, 2]], [1, 2], [3, 5], 2, 5)
+        sage: _simplify_vertices([[7, 5], [7, 0], [7, 15]], 2)
+        ([[1], [0], [3]], [0], [3], 1, 5)
+    """
+    vertices, mins, maxs, new_dim = _drop_constant_dimensions(vertices, dimension)
+    new_vertices, scale_factor = _scale_down_vertices(vertices)
 
     new_mins = [mini//scale_factor for mini in mins]
     new_maxs = [maxi//scale_factor for maxi in maxs]
     return new_vertices, new_mins, new_maxs, new_dim, scale_factor
 
-def drop_dimensions(to_reduce, keep_filter):
-    return [[val for val, keep in zip(vertex, keep_filter) if keep]
-            for vertex in to_reduce]
+def _drop_constant_dimensions(vertices, dimension):
+    r"""
+    Drop all dimensions <= dimension of 'vertices' where every vertex has the same value.
 
-def drop_constant_dimensions(vertices, dimension):
+    Return cleaned vertices, minimum and maximum over all vertices and dimension,
+    and the new dimension of the vertices.
+
+    TESTS::
+
+        sage: from ehrhart_polynomial.ehrhart_polynomial import _drop_constant_dimensions
+        sage: _drop_constant_dimensions([[0, 1, 2, 5], [0, 1, 4, 5]], 4)
+        ([[2], [4]], [2], [4], 1)
+        sage: _drop_constant_dimensions([[0, -1, 0], [0, 1, 3], [0, 2, 2]], 3)
+        ([[-1, 0], [1, 3], [2, 2]], [-1, 0], [2, 3], 2)
+
+    """
     columns = [[vertex[d] for vertex in vertices]
                for d in range(dimension)]
     mins = [min(col) for col in columns]
@@ -146,12 +179,39 @@ def drop_constant_dimensions(vertices, dimension):
 
     not_equal = [mins[d] != maxs[d] for d in range(dimension)]
 
-    vertices = drop_dimensions(vertices, not_equal)
-    mins, maxs = drop_dimensions([mins, maxs], not_equal)
+    vertices = _drop_dimensions(vertices, not_equal)
+    mins, maxs = _drop_dimensions([mins, maxs], not_equal)
     new_dimension = sum(not_equal)
     return vertices, mins, maxs, new_dimension
 
-def scale_down_vertices(vertices):
+def _drop_dimensions(to_reduce, keep_filter):
+    r"""
+    Return 'to_reduce' where the dimensions are filtered according to 'keep_filter'
+
+    TESTS::
+
+        sage: from ehrhart_polynomial.ehrhart_polynomial import _drop_dimensions
+        sage: _drop_dimensions([[0, 1, 2], [3, 4, 5]], [True, False, True])
+        [[0, 2], [3, 5]]
+        sage: _drop_dimensions([[0, 1, 2], [3, 4, 5]], [1, 1])
+        [[0, 1], [3, 4]]
+    """
+    return [[val for val, keep in zip(vertex, keep_filter) if keep]
+            for vertex in to_reduce]
+
+def _scale_down_vertices(vertices):
+    r"""
+    Computes 'scale_factor' as gcd of all coordinates of the vertices.
+    Return vertices divided by scale_factor and 'scale_factor'.
+
+    TESTS::
+
+        sage: from ehrhart_polynomial.ehrhart_polynomial import _scale_down_vertices
+        sage: _scale_down_vertices([[0, 0], [5, 10], [15, 20]])
+        ([[0, 0], [1, 2], [3, 4]], 5)
+        sage: _scale_down_vertices([[0, 1], [3, 5]])
+        ([[0, 1], [3, 5]], 1)
+    """
     scale_factor = gcd(num for vertex in vertices for num in vertex)
     vertices = [[num//scale_factor for num in vertex] for vertex in vertices]
     return vertices, scale_factor

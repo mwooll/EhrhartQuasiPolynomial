@@ -11,7 +11,7 @@ from sage.rings.rational_field import QQ
 from sage.rings.polynomial.polynomial_ring_constructor import PolynomialRing
 from sage.geometry.polyhedron.constructor import Polyhedron
 
-R = PolynomialRing(QQ, "x")
+R = PolynomialRing(QQ, "x", sparse=False)
 x = R.gen()
 
 QPR = QuasiPolynomialRing(QQ)
@@ -28,6 +28,26 @@ def ehrhart_polynomial(vertices, simplify=True):
 
 # interpolate polynomial
 def _interpolate_polynomial(points_sequence, period, scale_factor):
+    r"""
+    Computes the Quasi-Polynomial which evaluates to 'points_sequence' and has
+    the specified period.
+    Return a 'ehrhart_polynomial.quasipolynomial.QuasiPolynomialElement'
+
+    TESTS:
+
+        sage: from ehrhart_polynomial.ehrhart_polynomial import (
+        ....:    _points_contained_sequence, _interpolate_polynomial)
+        sage: vertices = [[0, 0], [2, 0], [2, 2], [0, 2]]
+        sage: sequence, period, factor = _points_contained_sequence(vertices, True)
+        sage: points_sequence = [(k+1, y) for k, y in enumerate(sequence)]
+        sage: _interpolate_polynomial(points_sequence, period, factor)
+        QuasiPolynomialElement(Ring of Quasi-Polynomials over Rational Field, [[1], [4], [4]])
+        sage: vertices = [[0, 0], [1/2, 1/3]]
+        sage: sequence, period, factor = _points_contained_sequence(vertices, False)
+        sage: points_sequence = [(k+1, y) for k, y in enumerate(sequence)]
+        sage: _interpolate_polynomial(points_sequence, period, factor)
+        QuasiPolynomialElement(Ring of Quasi-Polynomials over Rational Field, [[1, 5/6, 2/3, 1/2, 1/3, 1/6], [1/6]])
+    """
     if period == 1: # integral polytopes
         polynomial = R.lagrange_polynomial(points_sequence)
         polynomial = polynomial(scale_factor*x)
@@ -42,6 +62,18 @@ def _interpolate_polynomial(points_sequence, period, scale_factor):
     return _construct_quasipolynomial(polynomials, period)
 
 def _construct_quasipolynomial(polynomials, period):
+    r"""
+    Construct a Quasi-Polynomial out of 'polynomials' with the specified period.
+    Return a 'ehrhart_polynomial.quasipolynomial.QuasiPolynomialElement'
+
+    TESTS::
+
+        sage: from ehrhart_polynomial.ehrhart_polynomial import _construct_quasipolynomial
+        sage: x = PolynomialRing(QQ, "x").gen()
+        sage: polys = [x+1, 2*x+2, x+3, 2*x+4]
+        sage: _construct_quasipolynomial(polys, 4)
+        QuasiPolynomialElement(Ring of Quasi-Polynomials over Rational Field, [[4, 1, 2, 3], [2, 1]])
+    """
     polynomials = deque(polynomials)
     polynomials.rotate(1)
 

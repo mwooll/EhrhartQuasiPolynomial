@@ -24,7 +24,7 @@ class QuasiPolynomialElement(RingElement):
         sage: from ehrhart_polynomial.quasipolynomial import QuasiPolynomialRing
         sage: qpr = QuasiPolynomialRing(QQ)
         sage: qpr()
-        QuasiPolynomialElement(Ring of Quasi Polynomials over Rational Field, [[0]])
+        QuasiPolynomialElement(Ring of Quasi-Polynomials over Rational Field, [[0]])
         sage: print(qpr([[0, 1], 2, 3])) # doctest: +NORMALIZE_WHITESPACE
         QuasiPolynomial given by
         [0, 1] + [2]*k + [3]*k^2
@@ -182,7 +182,7 @@ class QuasiPolynomialElement(RingElement):
             sage: from ehrhart_polynomial.quasipolynomial import QuasiPolynomialRing
             sage: qpr = QuasiPolynomialRing(QQ)
             sage: -qpr([[0, 1], 2])
-            QuasiPolynomialElement(Ring of Quasi Polynomials over Rational Field, [[0, -1], [-2]])
+            QuasiPolynomialElement(Ring of Quasi-Polynomials over Rational Field, [[0, -1], [-2]])
         """
         return self.__class__(self.parent(), [-c for c in self._coefficients])
 
@@ -196,10 +196,10 @@ class QuasiPolynomialElement(RingElement):
             sage: qpr = QuasiPolynomialRing(QQ)
             sage: q = qpr([[1, 2], [1, 2]])
             sage: q + 1
-            QuasiPolynomialElement(Ring of Quasi Polynomials over Rational Field, [[2, 3], [1, 2]])
+            QuasiPolynomialElement(Ring of Quasi-Polynomials over Rational Field, [[2, 3], [1, 2]])
             sage: r = qpr([[1, 2, 3], [2, 1]])
             sage: q + r
-            QuasiPolynomialElement(Ring of Quasi Polynomials over Rational Field, [[2, 4, 4, 3, 3, 5], [3]])
+            QuasiPolynomialElement(Ring of Quasi-Polynomials over Rational Field, [[2, 4, 4, 3, 3, 5], [3]])
         """
         other_degree = other.degree()
         other_coefs = other.coefficients()
@@ -220,10 +220,10 @@ class QuasiPolynomialElement(RingElement):
             sage: qpr = QuasiPolynomialRing(QQ)
             sage: q = qpr([[1, 2], [1, 2]])
             sage: q - 1
-            QuasiPolynomialElement(Ring of Quasi Polynomials over Rational Field, [[0, 1], [1, 2]])
+            QuasiPolynomialElement(Ring of Quasi-Polynomials over Rational Field, [[0, 1], [1, 2]])
             sage: r = qpr([[1, 2, 3], [2, 1]])
             sage: q - r
-            QuasiPolynomialElement(Ring of Quasi Polynomials over Rational Field, [[0, 0, -2, 1, -1, -1], [-1, 1]])
+            QuasiPolynomialElement(Ring of Quasi-Polynomials over Rational Field, [[0, 0, -2, 1, -1, -1], [-1, 1]])
         """
         return self.__add__(-other)
 
@@ -237,10 +237,10 @@ class QuasiPolynomialElement(RingElement):
             sage: qpr = QuasiPolynomialRing(QQ)
             sage: q = qpr([[1, 2], [1, 2]])
             sage: q * 2
-            QuasiPolynomialElement(Ring of Quasi Polynomials over Rational Field, [[2, 4], [2, 4]])
+            QuasiPolynomialElement(Ring of Quasi-Polynomials over Rational Field, [[2, 4], [2, 4]])
             sage: r = qpr([[1, 2, 3], [2, 1]])
             sage: q * r # doctest: +NORMALIZE_WHITESPACE
-            QuasiPolynomialElement(Ring of Quasi Polynomials over Rational Field, 
+            QuasiPolynomialElement(Ring of Quasi-Polynomials over Rational Field, 
                                    [[1, 4, 3, 2, 2, 6], [3, 6, 5, 4, 4, 8], [2]])
         """
         mul_coefficients = [self.parent().base().zero()]*(self._degree + other.degree() + 1)
@@ -259,7 +259,16 @@ class QuasiPolynomialRing(UniqueRepresentation, CommutativeRing):
         CommutativeRing.__init__(self, base)
 
     def _repr_(self):
-        return f"Ring of Quasi Polynomials over {self.base().base_ring()}"
+        r"""
+        TESTS::
+
+            sage: from ehrhart_polynomial.quasipolynomial import QuasiPolynomialRing
+            sage: QuasiPolynomialRing(QQ)
+            Ring of Quasi-Polynomials over Rational Field
+            sage: QuasiPolynomialRing(SR)
+            Ring of Quasi-Polynomials over Symbolic Ring
+        """
+        return f"Ring of Quasi-Polynomials over {self.base().base_ring()}"
 
     @cached_method
     def gen(self, n=0):
@@ -271,7 +280,7 @@ class QuasiPolynomialRing(UniqueRepresentation, CommutativeRing):
             sage: from ehrhart_polynomial.quasipolynomial import QuasiPolynomialRing
             sage: qpr = QuasiPolynomialRing(QQ)
             sage: x = qpr.gen(); x
-            QuasiPolynomialElement(Ring of Quasi Polynomials over Rational Field, [[0], [1]])
+            QuasiPolynomialElement(Ring of Quasi-Polynomials over Rational Field, [[0], [1]])
 
         An identical generator is always returned.
 

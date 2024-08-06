@@ -18,16 +18,16 @@ QPR = QuasiPolynomialRing(QQ)
 
 # calculate ehrhart polynomial
 def ehrhart_polynomial(vertices, simplify=True):
-    y_values, scale_factor, period = points_contained_sequence(vertices, simplify)
+    y_values, scale_factor, period = _points_contained_sequence(vertices, simplify)
 
     interpolation_points = [(k+1, y) for k, y in enumerate(y_values)]
-    polynomial = interpolate_polynomial(interpolation_points, period, scale_factor)
+    polynomial = _interpolate_polynomial(interpolation_points, period, scale_factor)
 
     return polynomial
 
 
 # interpolate polynomial
-def interpolate_polynomial(points, period, scale_factor):
+def _interpolate_polynomial(points, period, scale_factor):
     if period == 1: # integral polytopes
         polynomial = R.lagrange_polynomial(points)
         polynomial = polynomial(scale_factor*x)
@@ -39,9 +39,9 @@ def interpolate_polynomial(points, period, scale_factor):
         period_points = points[k::period]
         polynomials[k] = R.lagrange_polynomial(period_points)
 
-    return construct_quasipolynomial(polynomials, period, scale_factor)
+    return _construct_quasipolynomial(polynomials, period, scale_factor)
 
-def construct_quasipolynomial(polynomials, period, scale_factor):
+def _construct_quasipolynomial(polynomials, period, scale_factor):
     polynomials = deque(polynomials)
     polynomials.rotate(1)
     polynomials = [poly(scale_factor*x) for poly in polynomials]
@@ -61,25 +61,25 @@ def construct_quasipolynomial(polynomials, period, scale_factor):
 
 
 # points contained
-def points_contained_sequence(vertices, simplify):
+def _points_contained_sequence(vertices, simplify):
     dimension = len(vertices[0])
-    polytope_period = get_period(vertices)
+    polytope_period = _get_period(vertices)
 
     if simplify and polytope_period == 1:
         result = _simplify_vertices(vertices, dimension)
         vertices, base_min, base_max, dimension, scale_factor = result
     else:
-        base_min, base_max = get_bounding_extrema(vertices, dimension)
+        base_min, base_max = _get_bounding_extrema(vertices, dimension)
         scale_factor = 1
 
     base_poly = Polyhedron(vertices)
 
     if polytope_period == 1:
         iterations = dimension + 1
-        bounding_box = get_bounding_box
+        bounding_box = _get_bounding_box
     else:
         iterations = polytope_period*(dimension + 1)
-        bounding_box = get_bounding_box_rational
+        bounding_box = _get_bounding_box_rational
 
     counting_sequence = [0]*(iterations)
 
@@ -88,11 +88,11 @@ def points_contained_sequence(vertices, simplify):
         poly += base_poly
         box = bounding_box(base_min, base_max, k+1)
 
-        counting_sequence[k] = points_contained(poly, box)
+        counting_sequence[k] = _points_contained(poly, box)
 
     return counting_sequence, scale_factor, polytope_period
 
-def points_contained(poly, box):
+def _points_contained(poly, box):
     contained = 0
     for point in box:
         if point in poly:
@@ -101,7 +101,7 @@ def points_contained(poly, box):
 
 
 # period
-def get_period(vertices):
+def _get_period(vertices):
     denominators = [QQ(coordinate).denominator() for vertex in vertices
                     for coordinate in vertex]
     period = lcm(denominators)
@@ -109,18 +109,21 @@ def get_period(vertices):
 
 
 # bounding box
-def get_bounding_extrema(vertices, dimension):
+def _get_bounding_extrema(vertices, dimension):
+    r"""
+    Return the bounding box which encompasses 'vertices'
+    """
     columns = [[vertex[d] for vertex in vertices]
                for d in range(dimension)]
     mins = [min(col) for col in columns]
     maxs = [max(col) for col in columns]
     return mins, maxs
 
-def get_bounding_box(mins, maxs, factor):
+def _get_bounding_box(mins, maxs, factor):
     return product(*[range(factor*mini, factor*maxi + 1)
                      for mini, maxi in zip(mins, maxs)])
 
-def get_bounding_box_rational(mins, maxs, factor):
+def _get_bounding_box_rational(mins, maxs, factor):
     return product(*[range(ceil(factor*mini), floor(factor*maxi) + 1)
                      for mini, maxi in zip(mins, maxs)])
 

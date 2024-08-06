@@ -59,9 +59,29 @@ def _construct_quasipolynomial(polynomials, period, scale_factor):
 
     return QPR(periodic_coefficients)
 
-
 # points contained
 def _points_contained_sequence(vertices, simplify):
+    r"""
+    Compute sequence [(k, a_k)] where a_k is the number of integral points of 'vertices'*k,
+    and k goes from 0 to (period of vertices)*(dimension of vertices), if 'simplify'
+    is True, then k goes to (period of vertices)*(dimension of simplified vertices)
+    Return the computed sequence, 'scale_factor' from '_scale_down_vertices()'
+    and the period of 'vertices'
+
+    Note: if 'vertices' are truly rational, then 'simplify' has no effect.
+
+    TESTS::
+
+        sage: from ehrhart_polynomial.ehrhart_polynomial import _points_contained_sequence
+        sage: _points_contained_sequence([[0, 0], [2, 0], [2, 2], [0, 2]], False)
+        ([9, 25, 49], 1, 1)
+        sage: _points_contained_sequence([[0, 0], [2, 0], [2, 2], [0, 2]], True)
+        ([4, 9, 16], 2, 1)
+        sage: _points_contained_sequence([[0, 0], [1/2, 0], [0, 1/2]], False)
+        ([1, 3, 3, 6, 6, 10], 1, 2)
+        sage: _points_contained_sequence([[0, 0], [1/2, 0], [0, 1/2]], True)
+        ([1, 3, 3, 6, 6, 10], 1, 2)
+    """
     dimension = len(vertices[0])
     polytope_period = _get_period(vertices)
 
@@ -93,20 +113,45 @@ def _points_contained_sequence(vertices, simplify):
     return counting_sequence, scale_factor, polytope_period
 
 def _points_contained(poly, box):
-    contained = 0
-    for point in box:
-        if point in poly:
-            contained += 1
-    return contained
+    r"""
+    Return the number of points in 'box' which are inside 'poly'.
 
+    TESTS::
+
+        sage: from ehrhart_polynomial.ehrhart_polynomial import (
+        ....:       _points_contained, _get_bounding_extrema,
+        ....:       _get_bounding_box, _get_bounding_box_rational)
+        sage: int_vertices = [[0, 0], [0, 2], [2, 0]]
+        sage: int_box = _get_bounding_box(*_get_bounding_extrema(int_vertices, 2), 1)
+        sage: _points_contained(Polyhedron(int_vertices), int_box)
+        6
+        sage: rat_vertices = [[0, 0], [0, 7/2], [5/4, 0]]
+        sage: rat_box = _get_bounding_box_rational(*_get_bounding_extrema(rat_vertices, 2), 2)
+        sage: _points_contained(Polyhedron(rat_vertices)*2, rat_box)
+        15
+    """
+    return sum(int(point in poly) for point in box)
 
 # period
 def _get_period(vertices):
+    r"""
+    Return the period of 'vertices'. The period of a set of vertices
+    is defined as the lcm of the denominators of all vertices.
+
+    TESTS::
+
+        sage: from ehrhart_polynomial.ehrhart_polynomial import _get_period
+        sage: _get_period([[0, 0], [1, 0], [1, 1], [0, 1]])
+        1
+        sage: _get_period([[-1/2, 0], [2/3, 0], [0, 1/5]])
+        30
+        sage: _get_period([[1, 1/2], [2, 1/4], [3, 1/8]])
+        8
+    """
     denominators = [QQ(coordinate).denominator() for vertex in vertices
                     for coordinate in vertex]
     period = lcm(denominators)
     return period
-
 
 # bounding box
 def _get_bounding_extrema(vertices, dimension):
@@ -161,7 +206,6 @@ def _get_bounding_box_rational(mins, maxs, factor):
     """
     return product(*[range(ceil(factor*mini), floor(factor*maxi) + 1)
                      for mini, maxi in zip(mins, maxs)])
-
 
 # simplify polytope
 def _simplify_vertices(vertices, dimension):

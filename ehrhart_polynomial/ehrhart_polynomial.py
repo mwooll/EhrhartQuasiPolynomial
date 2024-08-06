@@ -18,7 +18,7 @@ QPR = QuasiPolynomialRing(QQ)
 
 # calculate ehrhart polynomial
 def ehrhart_polynomial(vertices, simplify=True):
-    y_values, scale_factor, period = _points_contained_sequence(vertices, simplify)
+    y_values, period, scale_factor = _points_contained_sequence(vertices, simplify)
 
     interpolation_points = [(k+1, y) for k, y in enumerate(y_values)]
     polynomial = _interpolate_polynomial(interpolation_points, period, scale_factor)
@@ -27,24 +27,23 @@ def ehrhart_polynomial(vertices, simplify=True):
 
 
 # interpolate polynomial
-def _interpolate_polynomial(points, period, scale_factor):
+def _interpolate_polynomial(points_sequence, period, scale_factor):
     if period == 1: # integral polytopes
-        polynomial = R.lagrange_polynomial(points)
+        polynomial = R.lagrange_polynomial(points_sequence)
         polynomial = polynomial(scale_factor*x)
         coefs = [float(c) for c in polynomial.coefficients(sparse=False)]
         return QPR(coefs)
 
     polynomials = [0]*period # rational polytopes
     for k in range(period):
-        period_points = points[k::period]
+        period_points = points_sequence[k::period]
         polynomials[k] = R.lagrange_polynomial(period_points)
 
-    return _construct_quasipolynomial(polynomials, period, scale_factor)
+    return _construct_quasipolynomial(polynomials, period)
 
-def _construct_quasipolynomial(polynomials, period, scale_factor):
+def _construct_quasipolynomial(polynomials, period):
     polynomials = deque(polynomials)
     polynomials.rotate(1)
-    polynomials = [poly(scale_factor*x) for poly in polynomials]
 
     degrees = [poly.degree() for poly in polynomials]
     max_degree = max(degrees)
@@ -76,11 +75,11 @@ def _points_contained_sequence(vertices, simplify):
         sage: _points_contained_sequence([[0, 0], [2, 0], [2, 2], [0, 2]], False)
         ([9, 25, 49], 1, 1)
         sage: _points_contained_sequence([[0, 0], [2, 0], [2, 2], [0, 2]], True)
-        ([4, 9, 16], 2, 1)
+        ([4, 9, 16], 1, 2)
         sage: _points_contained_sequence([[0, 0], [1/2, 0], [0, 1/2]], False)
-        ([1, 3, 3, 6, 6, 10], 1, 2)
+        ([1, 3, 3, 6, 6, 10], 2, 1)
         sage: _points_contained_sequence([[0, 0], [1/2, 0], [0, 1/2]], True)
-        ([1, 3, 3, 6, 6, 10], 1, 2)
+        ([1, 3, 3, 6, 6, 10], 2, 1)
     """
     dimension = len(vertices[0])
     polytope_period = _get_period(vertices)
@@ -110,7 +109,7 @@ def _points_contained_sequence(vertices, simplify):
 
         counting_sequence[k] = _points_contained(poly, box)
 
-    return counting_sequence, scale_factor, polytope_period
+    return counting_sequence, polytope_period, scale_factor
 
 def _points_contained(poly, box):
     r"""

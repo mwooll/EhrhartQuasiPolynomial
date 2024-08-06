@@ -98,12 +98,12 @@ class TestEhrhartPolynomial(TestCase):
         # rational
         half_unit_square = [(0, 0), (1/2, 0), (1/2, 1/2), (0, 1/2)]
         self.assertEqual(_points_contained_sequence(half_unit_square, False),
-                         ([1, 4, 4, 9, 9, 16], 1, 2))
+                         ([1, 4, 4, 9, 9, 16], 2, 1))
 
         rational_triangle = [(0, 0), (3/2, 0), (0, 1/3)]
         self.assertEqual(_points_contained_sequence(rational_triangle, True),
                          ([2, 4, 6, 9, 12, 16, 20, 25, 30,
-                           36, 42, 49, 56, 64, 72, 81, 90, 100], 1, 6))
+                           36, 42, 49, 56, 64, 72, 81, 90, 100], 6, 1))
 
     def test__points_contained_sequence_simplified(self):
         triangle = [[0, 0], [1, 0], [0, 1]]
@@ -114,9 +114,9 @@ class TestEhrhartPolynomial(TestCase):
         self.assertEqual(_points_contained_sequence(flat_tri, True),
                          _points_contained_sequence(triangle, False))
 
-        bloated_square = [[0, 0], [3, 0], [3, 3], [3, 3]]
-        self.assertEqual(_points_contained_sequence(bloated_square, True),
-                         (_points_contained_sequence(triangle, False)[0], 3, 1))
+        bloated_triangle = [[0, 0], [3, 0], [0, 3]]
+        self.assertEqual(_points_contained_sequence(bloated_triangle, True),
+                         (_points_contained_sequence(triangle, False)[0], 1, 3))
 
     def test__points_contained(self):
         vertices = [[0, 0], [1, 0], [0, 1]]

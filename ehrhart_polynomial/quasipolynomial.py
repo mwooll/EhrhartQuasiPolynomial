@@ -3,7 +3,7 @@ from .integerperiodicfunction import IntegerPeriodicFunctionRing
 from sage.arith.functions import lcm
 from sage.categories.pushout import ConstructionFunctor
 from sage.categories.commutative_rings import CommutativeRings
-from sage.rings.polynomial.polynomial_ring_constructor import PolynomialRing
+from sage.misc.cachefunc import cached_method
 from sage.rings.ring import CommutativeRing
 from sage.structure.element import RingElement
 from sage.structure.unique_representation import UniqueRepresentation
@@ -260,6 +260,29 @@ class QuasiPolynomialRing(UniqueRepresentation, CommutativeRing):
 
     def _repr_(self):
         return f"Ring of Quasi Polynomials over {self.base().base_ring()}"
+
+    @cached_method
+    def gen(self, n=0):
+        r"""
+        Return the indeterminate generator of this quasi-polynomial ring.
+
+        EXAMPLES::
+
+            sage: from ehrhart_polynomial.quasipolynomial import QuasiPolynomialRing
+            sage: qpr = QuasiPolynomialRing(QQ)
+            sage: x = qpr.gen(); x
+            QuasiPolynomialElement(Ring of Quasi Polynomials over Rational Field, [[0], [1]])
+
+        An identical generator is always returned.
+
+        ::
+
+            sage: x is qpr.gen()
+            True
+        """
+        if n != 0:
+            raise IndexError("generator 'n' is not defined")
+        return self.element_class(self, [0, 1])
 
     def base_ring(self):
         r"""

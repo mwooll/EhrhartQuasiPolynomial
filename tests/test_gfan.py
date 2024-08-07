@@ -6,8 +6,9 @@ from sage.geometry.cone import Cone
 from sage.matrix.constructor import Matrix as create_matrix
 from sage.modules.free_module_element import free_module_element 
 
-from gfan import (secondary_fan, compute_secondary_fan, get_names,
-                  gfan_secondaryfan, retrieve_results)
+from ehrhart_quasi_polynomial.gfan import (secondary_fan, compute_secondary_fan,
+                                           get_names, gfan_secondaryfan,
+                                           retrieve_results)
 
 from unittest import TestCase, main
 

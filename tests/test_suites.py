@@ -1,4 +1,5 @@
-from ehrhart_polynomial import IntegerPeriodicFunctionRing, QuasiPolynomialRing
+from ehrhart_quasi_polynomial.integerperiodicfunction import IntegerPeriodicFunctionRing
+from ehrhart_quasi_polynomial.quasipolynomial import QuasiPolynomialRing
 
 from sage.rings.finite_rings.integer_mod_ring import IntegerModRing
 from sage.rings.integer_ring import ZZ

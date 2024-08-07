@@ -2,7 +2,7 @@ from sage.all import *
 from sage.geometry.polyhedron.constructor import Polyhedron
 from sage.structure.element import Matrix
 
-from ehrhart_polynomial import secondary_fan, ehrhart_polynomial
+from ehrhart_quasi_polynomial import secondary_fan, ehrhart_quasi_polynomial
 
 
 
@@ -16,17 +16,17 @@ def piecewise_ehrhart_quasipolynomial(A_matrix, sec_fan=None):
 def _compute_piecewise(A_matrix, sec_fan):
     pass
 
-def create_polyhedron_from_matrix(A, b):
+def create_polytope_from_matrix(A, b):
     """
-    Creates and returns the polyhedron whose faces are defined by
+    Creates and returns the polytope whose faces are defined by
         Ax <= b
     where the inequality is understood componentwise
 
     EXAMPLES::
 
-        sage: from ehrhart_polynomial import create_polyhedron_from_matrix
+        sage: from ehrhart_quasi_polynomial import create_polytope_from_matrix
         sage: A = Matrix([[-1, 0], [0, -1], [1, 1]]); b = [0, 0, 1]
-        sage: poly = create_polyhedron_from_matrix(A, b)
+        sage: poly = create_polytope_from_matrix(A, b)
         sage: poly
         A 2-dimensional polyhedron in QQ^2 defined as the convex hull of 3 vertices
         sage: poly.Vrepresentation()

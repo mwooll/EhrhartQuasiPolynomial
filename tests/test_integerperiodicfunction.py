@@ -1,4 +1,4 @@
-from ehrhart_polynomial.integerperiodicfunction import IntegerPeriodicFunctionRing
+from ehrhart_quasi_polynomial.integerperiodicfunction import IntegerPeriodicFunctionRing
 
 from sage.all import *
 from sage.rings.rational_field import QQ

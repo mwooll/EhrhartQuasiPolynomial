@@ -16,9 +16,41 @@ x = R.gen()
 
 QPR = QuasiPolynomialRing(QQ)
 
-# calculate ehrhart polynomial
-def ehrhart_polynomial(vertices, simplify=True):
-    y_values, period, scale_factor = _points_contained_sequence(vertices, simplify)
+# calculate ehrhart quasipolynomial
+def ehrhart_quasi_polynomial(vertices):
+    r"""
+    Compute the Ehrhart quasi-polynomial of the (convex) polytope defined by ``vertices``.
+    Return a 'ehrhart_quasi_polynomial.quasipolynomial.QuasiPolynomialElement'
+    
+    The Ehrhart quasi-polynomial of a polytope `P` is a quasi-polynomial `p`
+    where `p(k)` tells you how many integral points `kP` contains.
+    If `P` is a rational polytope then a true QuasiPolynomial will be returned.
+    If `P` is an integral polytope then a normal polynomial would suffice,
+    but for consistency always a QuasiPolynomial is returned.
+
+    INPUTS:
+        - ``vertices`` : iterable of same length iterables
+
+
+    EXAMPLES::
+
+        sage: from ehrhart_quasi_polynomial.ehrhart_quasi_polynomial import ehrhart_quasi_polynomial
+        sage: unit_square = [[0, 0], [1, 0], [1, 1], [0, 1]]
+        sage: q = ehrhart_quasi_polynomial(unit_square); q
+        QuasiPolynomialElement(Ring of Quasi-Polynomials over Rational Field, [[1], [2], [1]])
+        sage: q(1) # number of points of the unit cube
+        4
+        sage: q(2) # number of points of the unit cube scaled by `2`
+        9
+
+    ::
+
+        sage: half_unit_cube = [[0, 0, 0], [0, 0, 1/2], [0, 1/2, 1/2], [0, 1/2, 0],
+        ....:           [1/2, 0, 0], [1/2, 0, 1/2], [1/2, 1/2, 1/2], [1/2, 1/2, 0]]
+        sage: ehrhart_quasi_polynomial(half_unit_cube)
+        QuasiPolynomialElement(Ring of Quasi-Polynomials over Rational Field, [[1, 1/8], [3/2, 3/8], [3/4, 3/8], [1/8]])
+    """
+    y_values, period, scale_factor = _points_contained_sequence(vertices)
 
     interpolation_points = [(k+1, y) for k, y in enumerate(y_values)]
     polynomial = _interpolate_polynomial(interpolation_points, period, scale_factor)
@@ -31,19 +63,22 @@ def _interpolate_polynomial(points_sequence, period, scale_factor):
     r"""
     Computes the Quasi-Polynomial which evaluates to 'points_sequence' and has
     the specified period.
-    Return a 'ehrhart_polynomial.quasipolynomial.QuasiPolynomialElement'
+    Return a 'ehrhart_quasi_polynomial.quasipolynomial.QuasiPolynomialElement'
 
     TESTS:
 
-        sage: from ehrhart_polynomial.ehrhart_polynomial import (
+        sage: from ehrhart_quasi_polynomial.ehrhart_quasi_polynomial import (
         ....:    _points_contained_sequence, _interpolate_polynomial)
         sage: vertices = [[0, 0], [2, 0], [2, 2], [0, 2]]
-        sage: sequence, period, factor = _points_contained_sequence(vertices, True)
+        sage: sequence, period, factor = _points_contained_sequence(vertices)
         sage: points_sequence = [(k+1, y) for k, y in enumerate(sequence)]
         sage: _interpolate_polynomial(points_sequence, period, factor)
         QuasiPolynomialElement(Ring of Quasi-Polynomials over Rational Field, [[1], [4], [4]])
+
+    ::
+
         sage: vertices = [[0, 0], [1/2, 1/3]]
-        sage: sequence, period, factor = _points_contained_sequence(vertices, False)
+        sage: sequence, period, factor = _points_contained_sequence(vertices)
         sage: points_sequence = [(k+1, y) for k, y in enumerate(sequence)]
         sage: _interpolate_polynomial(points_sequence, period, factor)
         QuasiPolynomialElement(Ring of Quasi-Polynomials over Rational Field, [[1, 5/6, 2/3, 1/2, 1/3, 1/6], [1/6]])
@@ -64,15 +99,15 @@ def _interpolate_polynomial(points_sequence, period, scale_factor):
 def _construct_quasipolynomial(polynomials, period):
     r"""
     Construct a Quasi-Polynomial out of 'polynomials' with the specified period.
-    Return a 'ehrhart_polynomial.quasipolynomial.QuasiPolynomialElement'
+    Return a 'ehrhart_quasi_polynomial.quasipolynomial.QuasiPolynomialElement'
 
     TESTS::
 
-        sage: from ehrhart_polynomial.ehrhart_polynomial import _construct_quasipolynomial
+        sage: from ehrhart_quasi_polynomial.ehrhart_quasi_polynomial import _construct_quasipolynomial
         sage: x = PolynomialRing(QQ, "x").gen()
-        sage: polys = [x+1, 2*x+2, x+3, 2*x+4]
+        sage: polys = [x+1, x**2+2, x+3, x**2+4]
         sage: _construct_quasipolynomial(polys, 4)
-        QuasiPolynomialElement(Ring of Quasi-Polynomials over Rational Field, [[4, 1, 2, 3], [2, 1]])
+        QuasiPolynomialElement(Ring of Quasi-Polynomials over Rational Field, [[4, 1, 2, 3], [0, 1], [1, 0]])
     """
     polynomials = deque(polynomials)
     polynomials.rotate(1)
@@ -85,38 +120,31 @@ def _construct_quasipolynomial(polynomials, period):
         periodic_values = [0]*period
         for index, poly in enumerate(polynomials):
             if degree <= degrees[index]:
-                periodic_values[index] = poly.coefficients()[degree]
+                periodic_values[index] = poly.list()[degree]
         periodic_coefficients[degree] = periodic_values
 
     return QPR(periodic_coefficients)
 
 # points contained
-def _points_contained_sequence(vertices, simplify):
+def _points_contained_sequence(vertices):
     r"""
     Compute sequence [(k, a_k)] where a_k is the number of integral points of 'vertices'*k,
-    and k goes from 0 to (period of vertices)*(dimension of vertices), if 'simplify'
-    is True, then k goes to (period of vertices)*(dimension of simplified vertices)
+    and k goes from 0 to (period of vertices)*(dimension of vertices).
     Return the computed sequence, 'scale_factor' from '_scale_down_vertices()'
     and the period of 'vertices'
 
-    Note: if 'vertices' are truly rational, then 'simplify' has no effect.
-
     TESTS::
 
-        sage: from ehrhart_polynomial.ehrhart_polynomial import _points_contained_sequence
-        sage: _points_contained_sequence([[0, 0], [2, 0], [2, 2], [0, 2]], False)
-        ([9, 25, 49], 1, 1)
-        sage: _points_contained_sequence([[0, 0], [2, 0], [2, 2], [0, 2]], True)
+        sage: from ehrhart_quasi_polynomial.ehrhart_quasi_polynomial import _points_contained_sequence
+        sage: _points_contained_sequence([[0, 0], [2, 0], [2, 2], [0, 2]])
         ([4, 9, 16], 1, 2)
-        sage: _points_contained_sequence([[0, 0], [1/2, 0], [0, 1/2]], False)
-        ([1, 3, 3, 6, 6, 10], 2, 1)
-        sage: _points_contained_sequence([[0, 0], [1/2, 0], [0, 1/2]], True)
+        sage: _points_contained_sequence([[0, 0], [1/2, 0], [0, 1/2]])
         ([1, 3, 3, 6, 6, 10], 2, 1)
     """
     dimension = len(vertices[0])
     polytope_period = _get_period(vertices)
 
-    if simplify and polytope_period == 1:
+    if polytope_period == 1:
         result = _simplify_vertices(vertices, dimension)
         vertices, base_min, base_max, dimension, scale_factor = result
     else:
@@ -149,7 +177,7 @@ def _points_contained(poly, box):
 
     TESTS::
 
-        sage: from ehrhart_polynomial.ehrhart_polynomial import (
+        sage: from ehrhart_quasi_polynomial.ehrhart_quasi_polynomial import (
         ....:       _points_contained, _get_bounding_extrema,
         ....:       _get_bounding_box, _get_bounding_box_rational)
         sage: int_vertices = [[0, 0], [0, 2], [2, 0]]
@@ -171,7 +199,7 @@ def _get_period(vertices):
 
     TESTS::
 
-        sage: from ehrhart_polynomial.ehrhart_polynomial import _get_period
+        sage: from ehrhart_quasi_polynomial.ehrhart_quasi_polynomial import _get_period
         sage: _get_period([[0, 0], [1, 0], [1, 1], [0, 1]])
         1
         sage: _get_period([[-1/2, 0], [2/3, 0], [0, 1/5]])
@@ -191,7 +219,7 @@ def _get_bounding_extrema(vertices, dimension):
 
     TESTS::
 
-        sage: from ehrhart_polynomial.ehrhart_polynomial import _get_bounding_extrema
+        sage: from ehrhart_quasi_polynomial.ehrhart_quasi_polynomial import _get_bounding_extrema
         sage: _get_bounding_extrema([[0, 0, 0], [-1, 0, 1]], 3)
         ([-1, 0, 0], [0, 0, 1])
         sage: _get_bounding_extrema([[-1, 1], [1, -1]], 2)
@@ -210,7 +238,7 @@ def _get_bounding_box(mins, maxs, factor):
 
     TESTS::
 
-        sage: from ehrhart_polynomial.ehrhart_polynomial import (_get_bounding_box,
+        sage: from ehrhart_quasi_polynomial.ehrhart_quasi_polynomial import (_get_bounding_box,
         ....:                                                    _get_bounding_extrema)
         sage: mins, maxs = _get_bounding_extrema([[0, 0], [1, 1]], 2)
         sage: list(_get_bounding_box(mins, maxs, 2)) # doctest: +NORMALIZE_WHITESPACE
@@ -228,7 +256,7 @@ def _get_bounding_box_rational(mins, maxs, factor):
 
     TESTS::
 
-        sage: from ehrhart_polynomial.ehrhart_polynomial import (_get_bounding_box_rational,
+        sage: from ehrhart_quasi_polynomial.ehrhart_quasi_polynomial import (_get_bounding_box_rational,
         ....:                                                    _get_bounding_extrema)
         sage: mins, maxs = _get_bounding_extrema([[0, 0], [1/2, 3/2]], 2)
         sage: list(_get_bounding_box_rational(mins, maxs, 2))
@@ -255,7 +283,7 @@ def _simplify_vertices(vertices, dimension):
 
     TESTS::
 
-        sage: from ehrhart_polynomial.ehrhart_polynomial import _simplify_vertices
+        sage: from ehrhart_quasi_polynomial.ehrhart_quasi_polynomial import _simplify_vertices
         sage: _simplify_vertices([[0, 0, 1], [0, 0, 2]], 3)
         ([[1], [2]], [1], [2], 1, 1)
         sage: _simplify_vertices([[5, 25], [15, 10]], 2)
@@ -279,7 +307,7 @@ def _drop_constant_dimensions(vertices, dimension):
 
     TESTS::
 
-        sage: from ehrhart_polynomial.ehrhart_polynomial import _drop_constant_dimensions
+        sage: from ehrhart_quasi_polynomial.ehrhart_quasi_polynomial import _drop_constant_dimensions
         sage: _drop_constant_dimensions([[0, 1, 2, 5], [0, 1, 4, 5]], 4)
         ([[2], [4]], [2], [4], 1)
         sage: _drop_constant_dimensions([[0, -1, 0], [0, 1, 3], [0, 2, 2]], 3)
@@ -304,7 +332,7 @@ def _drop_dimensions(to_reduce, keep_filter):
 
     TESTS::
 
-        sage: from ehrhart_polynomial.ehrhart_polynomial import _drop_dimensions
+        sage: from ehrhart_quasi_polynomial.ehrhart_quasi_polynomial import _drop_dimensions
         sage: _drop_dimensions([[0, 1, 2], [3, 4, 5]], [True, False, True])
         [[0, 2], [3, 5]]
         sage: _drop_dimensions([[0, 1, 2], [3, 4, 5]], [1, 1])
@@ -320,7 +348,7 @@ def _scale_down_vertices(vertices):
 
     TESTS::
 
-        sage: from ehrhart_polynomial.ehrhart_polynomial import _scale_down_vertices
+        sage: from ehrhart_quasi_polynomial.ehrhart_quasi_polynomial import _scale_down_vertices
         sage: _scale_down_vertices([[0, 0], [5, 10], [15, 20]])
         ([[0, 0], [1, 2], [3, 4]], 5)
         sage: _scale_down_vertices([[0, 1], [3, 5]])

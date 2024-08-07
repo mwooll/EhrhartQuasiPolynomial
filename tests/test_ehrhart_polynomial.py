@@ -1,11 +1,10 @@
-from ehrhart_polynomial import (ehrhart_polynomial,
-                                _points_contained_sequence, _points_contained,
-                                _get_period, _get_bounding_extrema,
-                                _get_bounding_box, _get_bounding_box_rational,
-                                _simplify_vertices, _drop_constant_dimensions,
-                                _drop_dimensions, _scale_down_vertices,
-                                IntegerPeriodicFunctionRing,
-                                QuasiPolynomialRing)
+from ehrhart_quasi_polynomial import (ehrhart_quasi_polynomial,
+                                      _points_contained_sequence, _points_contained,
+                                      _get_period, _get_bounding_extrema,
+                                      _get_bounding_box, _get_bounding_box_rational,
+                                      _simplify_vertices, _drop_constant_dimensions,
+                                      _drop_dimensions, _scale_down_vertices,
+                                      QuasiPolynomialRing)
 
 import sage.all
 from sage.rings.rational_field import QQ
@@ -21,102 +20,75 @@ x = R.gen()
 QPR = QuasiPolynomialRing(QQ)
 
 class TestEhrhartPolynomial(TestCase):
-    def test_ehrhart_polynomial(self):
+    def test_ehrhart_quasi_polynomial(self):
         # integral polytopes
-        point_poly = ehrhart_polynomial([(0, 0, 0, 0, 0)])
+        point_poly = ehrhart_quasi_polynomial([(0, 0, 0, 0, 0)])
         self.assertEqual(point_poly, QPR([1]))
 
-        axis = ehrhart_polynomial([[-3], [3]])
+        axis = ehrhart_quasi_polynomial([[-3], [3]])
         self.assertEqual(axis, QPR([1, 6]))
 
-        triangle = ehrhart_polynomial([[0, 0], [1, 0], [0, 1]])
+        triangle = ehrhart_quasi_polynomial([[0, 0], [1, 0], [0, 1]])
         self.assertEqual(triangle, QPR([1, 1.5, 0.5]))
 
-        flat_tri = ehrhart_polynomial([[0, 0, 0], [1, 0, 0], [0, 1, 0]])
+        flat_tri = ehrhart_quasi_polynomial([[0, 0, 0], [1, 0, 0], [0, 1, 0]])
         self.assertEqual(flat_tri, QPR([1, 1.5, 0.5]))
 
-        triangle_pyramid = ehrhart_polynomial([[0, 0, 0], [1, 0, 0],
+        triangle_pyramid = ehrhart_quasi_polynomial([[0, 0, 0], [1, 0, 0],
                                                 [0, 1, 0], [0, 0, 1]])
         self.assertEqual(triangle_pyramid, QPR([1, 11/6, 1, 1/6]))
 
-        square_poly = ehrhart_polynomial([[0, 0], [1, 0], [1, 1], [0, 1]])
+        square_poly = ehrhart_quasi_polynomial([[0, 0], [1, 0], [1, 1], [0, 1]])
         self.assertEqual(square_poly, QPR([1, 2, 1])) # (x + 1)**2
 
         vertices = [(0, 0, 0), (0, 0, 1), (0, 1, 0), (0, 1, 1),
                     (1, 0, 0), (1, 0, 1), (1, 1, 0), (1, 1, 1)]
-        cube_poly = ehrhart_polynomial(vertices)
+        cube_poly = ehrhart_quasi_polynomial(vertices)
         self.assertEqual(cube_poly, QPR([1, 3, 3, 1]))# (x + 1)**3
 
         # rational polytopes
         rational_point = [[1/7, 1/2]]
         values = [1] + [0]*13
-        self.assertEqual(ehrhart_polynomial(rational_point), QPR([values]))
+        self.assertEqual(ehrhart_quasi_polynomial(rational_point), QPR([values]))
 
         rational_triangle = [(0, 0), (3/2, 0), (0, 1/3)]
-        self.assertEqual(ehrhart_polynomial(rational_triangle),
+        self.assertEqual(ehrhart_quasi_polynomial(rational_triangle),
                          QPR([[1, 3/4], 1, 1/4]))
-
-
-    def test_ehrhart_polynomial_simplified(self):
-        triangle = [[0, 0], [1, 0], [0, 1]]
-        self.assertEqual(ehrhart_polynomial(triangle, True),
-                         ehrhart_polynomial(triangle, False))
-
-        bloated = [[0, 0, 2], [3, 0, 2], [0, 3, 2]]
-        self.assertEqual(ehrhart_polynomial(bloated, True),
-                         ehrhart_polynomial(bloated, False))
-
-        giant_rectangle = [[0, 0], [100, 0], [100, 50], [0, 50]]
-        self.assertEqual(ehrhart_polynomial(giant_rectangle, True),
-                         QPR([1, 150, 5000]))
 
 
     # points contained
     def test__points_contained_sequence(self):
         # integral
-        point = _points_contained_sequence([[0, 0, 0, 0, 0]], False)
+        point = _points_contained_sequence([[0, 0, 0, 0, 0]])
         self.assertEqual(point,
-                         ([1, 1, 1, 1, 1, 1], 1, 1))
+                         ([1], 1, 0))
 
-        square = _points_contained_sequence([[0, 0], [1, 0], [1, 1], [0, 1]], False)
+        square = _points_contained_sequence([[0, 0], [1, 0], [1, 1], [0, 1]])
         self.assertEqual(square, ([4, 9, 16], 1, 1))
 
         vertices = [(0, 0, 0), (0, 0, 1), (0, 1, 0), (0, 1, 1),
                     (1, 0, 0), (1, 0, 1), (1, 1, 0), (1, 1, 1)]
-        cube = _points_contained_sequence(vertices, False)
+        cube = _points_contained_sequence(vertices)
         self.assertEqual(cube, ([8, 27, 64, 125], 1, 1))
 
-        axis = _points_contained_sequence([[-3], [3]], False)
-        self.assertEqual(axis, ([7, 13], 1, 1))
+        axis = _points_contained_sequence([[-3], [3]])
+        self.assertEqual(axis, ([3, 5], 1, 3))
 
-        triangle = _points_contained_sequence([[0, 0], [1, 0], [0, 1]], False)
+        triangle = _points_contained_sequence([[0, 0], [1, 0], [0, 1]])
         self.assertEqual(triangle, ([3, 6, 10], 1, 1))
 
-        flat_tri = _points_contained_sequence([[0, 0, 0], [1, 0, 0], [0, 1, 0]], False)
-        self.assertEqual(flat_tri, ([3, 6, 10, 15], 1, 1))
+        flat_tri = _points_contained_sequence([[0, 0, 0], [1, 0, 0], [0, 1, 0]])
+        self.assertEqual(flat_tri, ([3, 6, 10], 1, 1))
 
         # rational
         half_unit_square = [(0, 0), (1/2, 0), (1/2, 1/2), (0, 1/2)]
-        self.assertEqual(_points_contained_sequence(half_unit_square, False),
+        self.assertEqual(_points_contained_sequence(half_unit_square),
                          ([1, 4, 4, 9, 9, 16], 2, 1))
 
         rational_triangle = [(0, 0), (3/2, 0), (0, 1/3)]
-        self.assertEqual(_points_contained_sequence(rational_triangle, True),
+        self.assertEqual(_points_contained_sequence(rational_triangle),
                          ([2, 4, 6, 9, 12, 16, 20, 25, 30,
                            36, 42, 49, 56, 64, 72, 81, 90, 100], 6, 1))
-
-    def test__points_contained_sequence_simplified(self):
-        triangle = [[0, 0], [1, 0], [0, 1]]
-        flat_tri = [[0, 0, 0], [1, 0, 0], [0, 1, 0]]
-
-        self.assertEqual(_points_contained_sequence(triangle, True),
-                         _points_contained_sequence(triangle, False))
-        self.assertEqual(_points_contained_sequence(flat_tri, True),
-                         _points_contained_sequence(triangle, False))
-
-        bloated_triangle = [[0, 0], [3, 0], [0, 3]]
-        self.assertEqual(_points_contained_sequence(bloated_triangle, True),
-                         (_points_contained_sequence(triangle, False)[0], 1, 3))
 
     def test__points_contained(self):
         vertices = [[0, 0], [1, 0], [0, 1]]

@@ -18,7 +18,7 @@ class IntegerPeriodicFunctionElement(RingElement):
 
     EXAMPLES::
         
-        sage: from ehrhart_polynomial.integerperiodicfunction import IntegerPeriodicFunctionRing
+        sage: from ehrhart_quasi_polynomial.integerperiodicfunction import IntegerPeriodicFunctionRing
         sage: ipfr = IntegerPeriodicFunctionRing(QQ)
         sage: ipfr()
         IntegerPeriodicFunctionElement(Ring of Integer Periodic Functions over Rational Field, [0])
@@ -84,7 +84,7 @@ class IntegerPeriodicFunctionElement(RingElement):
 
         EXAMPLES::
 
-            sage: from ehrhart_polynomial.integerperiodicfunction import IntegerPeriodicFunctionRing
+            sage: from ehrhart_quasi_polynomial.integerperiodicfunction import IntegerPeriodicFunctionRing
             sage: ipfr = IntegerPeriodicFunctionRing(QQ)
             sage: ipfr([1, 2, 3]).period()
             3
@@ -102,7 +102,7 @@ class IntegerPeriodicFunctionElement(RingElement):
 
         EXAMPLES::
 
-            sage: from ehrhart_polynomial.integerperiodicfunction import IntegerPeriodicFunctionRing
+            sage: from ehrhart_quasi_polynomial.integerperiodicfunction import IntegerPeriodicFunctionRing
             sage: ipfr = IntegerPeriodicFunctionRing(QQ)
             sage: ipfr([1, 2, 3]).constants()
             [1, 2, 3]
@@ -118,7 +118,7 @@ class IntegerPeriodicFunctionElement(RingElement):
 
         EXAMPLES::
             
-            sage: from ehrhart_polynomial.integerperiodicfunction import IntegerPeriodicFunctionRing
+            sage: from ehrhart_quasi_polynomial.integerperiodicfunction import IntegerPeriodicFunctionRing
             sage: ipfr = IntegerPeriodicFunctionRing(QQ)
             sage: p = ipfr([1, 2, 3])
             sage: p(1)
@@ -142,7 +142,7 @@ class IntegerPeriodicFunctionElement(RingElement):
 
         EXAMPLES::
             
-            sage: from ehrhart_polynomial.integerperiodicfunction import IntegerPeriodicFunctionRing
+            sage: from ehrhart_quasi_polynomial.integerperiodicfunction import IntegerPeriodicFunctionRing
             sage: ipfr = IntegerPeriodicFunctionRing(QQ)
             sage: p = ipfr([1, 2, 3])
             sage: p[1]
@@ -178,7 +178,7 @@ class IntegerPeriodicFunctionElement(RingElement):
 
         TESTS::
 
-            sage: from ehrhart_polynomial.integerperiodicfunction import IntegerPeriodicFunctionRing
+            sage: from ehrhart_quasi_polynomial.integerperiodicfunction import IntegerPeriodicFunctionRing
             sage: ipfr = IntegerPeriodicFunctionRing(QQ)
             sage: ipfr.zero() == 0
             True
@@ -198,7 +198,7 @@ class IntegerPeriodicFunctionElement(RingElement):
         
         TESTS::
 
-            sage: from ehrhart_polynomial.integerperiodicfunction import IntegerPeriodicFunctionRing
+            sage: from ehrhart_quasi_polynomial.integerperiodicfunction import IntegerPeriodicFunctionRing
             sage: ipfr = IntegerPeriodicFunctionRing(QQ)
             sage: bool(ipfr.zero())
             False
@@ -215,7 +215,7 @@ class IntegerPeriodicFunctionElement(RingElement):
 
         TESTS::
 
-            sage: from ehrhart_polynomial.integerperiodicfunction import IntegerPeriodicFunctionRing
+            sage: from ehrhart_quasi_polynomial.integerperiodicfunction import IntegerPeriodicFunctionRing
             sage: ipfr = IntegerPeriodicFunctionRing(QQ)
             sage: -ipfr([1, 2, 3])
             IntegerPeriodicFunctionElement(Ring of Integer Periodic Functions over Rational Field, [-1, -2, -3])
@@ -228,7 +228,7 @@ class IntegerPeriodicFunctionElement(RingElement):
         
         TESTS::
 
-            sage: from ehrhart_polynomial.integerperiodicfunction import IntegerPeriodicFunctionRing
+            sage: from ehrhart_quasi_polynomial.integerperiodicfunction import IntegerPeriodicFunctionRing
             sage: ipfr = IntegerPeriodicFunctionRing(QQ)
             sage: ipfr([1, 2, 3]) + ipfr([0, 1])
             IntegerPeriodicFunctionElement(Ring of Integer Periodic Functions over Rational Field, [1, 3, 3, 2, 2, 4])
@@ -245,7 +245,7 @@ class IntegerPeriodicFunctionElement(RingElement):
         r"""
         TESTS::
 
-            sage: from ehrhart_polynomial.integerperiodicfunction import IntegerPeriodicFunctionRing
+            sage: from ehrhart_quasi_polynomial.integerperiodicfunction import IntegerPeriodicFunctionRing
             sage: ipfr = IntegerPeriodicFunctionRing(QQ)
             sage: ipfr([1, 2, 3]) - ipfr([0, 1])
             IntegerPeriodicFunctionElement(Ring of Integer Periodic Functions over Rational Field, [1, 1, 3, 0, 2, 2])
@@ -260,7 +260,7 @@ class IntegerPeriodicFunctionElement(RingElement):
         
         TESTS::
 
-            sage: from ehrhart_polynomial.integerperiodicfunction import IntegerPeriodicFunctionRing
+            sage: from ehrhart_quasi_polynomial.integerperiodicfunction import IntegerPeriodicFunctionRing
             sage: ipfr = IntegerPeriodicFunctionRing(QQ)
             sage: ipfr([1, 2, 3]) * ipfr([0, 1])
             IntegerPeriodicFunctionElement(Ring of Integer Periodic Functions over Rational Field, [0, 2, 0, 1, 0, 3])
@@ -293,7 +293,7 @@ class IntegerPeriodicFunctionRing(UniqueRepresentation, CommutativeRing):
 
         EXAMPLES::
 
-            sage: from ehrhart_polynomial.integerperiodicfunction import IntegerPeriodicFunctionRing
+            sage: from ehrhart_quasi_polynomial.integerperiodicfunction import IntegerPeriodicFunctionRing
             sage: IntegerPeriodicFunctionRing(QQ).base_ring()
             Rational Field
             sage: IntegerPeriodicFunctionRing(SR).base_ring()
@@ -306,7 +306,7 @@ class IntegerPeriodicFunctionRing(UniqueRepresentation, CommutativeRing):
         Return the characteristic of the base
         EXAMPLES::
 
-            sage: from ehrhart_polynomial.integerperiodicfunction import IntegerPeriodicFunctionRing
+            sage: from ehrhart_quasi_polynomial.integerperiodicfunction import IntegerPeriodicFunctionRing
             sage: IntegerPeriodicFunctionRing(QQ).characteristic()
             0
             sage: IntegerPeriodicFunctionRing(IntegerModRing(19)).characteristic()
@@ -320,7 +320,7 @@ class IntegerPeriodicFunctionRing(UniqueRepresentation, CommutativeRing):
 
         EXAMPLES::
 
-            sage: from ehrhart_polynomial.integerperiodicfunction import IntegerPeriodicFunctionRing
+            sage: from ehrhart_quasi_polynomial.integerperiodicfunction import IntegerPeriodicFunctionRing
             sage: ipfr = IntegerPeriodicFunctionRing(QQ)
             sage: ipfr(1)
             IntegerPeriodicFunctionElement(Ring of Integer Periodic Functions over Rational Field, [1])
@@ -351,7 +351,7 @@ class IntegerPeriodicFunctionRing(UniqueRepresentation, CommutativeRing):
 
         TESTS::
 
-            sage: from ehrhart_polynomial.integerperiodicfunction import IntegerPeriodicFunctionRing
+            sage: from ehrhart_quasi_polynomial.integerperiodicfunction import IntegerPeriodicFunctionRing
             sage: ipfr = IntegerPeriodicFunctionRing(QQ)
             sage: ipfr._coerce_map_from_(QQ)
             True
@@ -375,7 +375,7 @@ class IntegerPeriodicFunctionRing(UniqueRepresentation, CommutativeRing):
 
         TESTS::
 
-            sage: from ehrhart_polynomial.integerperiodicfunction import IntegerPeriodicFunctionRing
+            sage: from ehrhart_quasi_polynomial.integerperiodicfunction import IntegerPeriodicFunctionRing
             sage: ipfr = IntegerPeriodicFunctionRing(QQ)
             sage: ipfr.is_integral_domain()
             False
@@ -388,7 +388,7 @@ class IntegerPeriodicFunctionRing(UniqueRepresentation, CommutativeRing):
 
         TESTS::
 
-            sage: from ehrhart_polynomial.integerperiodicfunction import IntegerPeriodicFunctionRing
+            sage: from ehrhart_quasi_polynomial.integerperiodicfunction import IntegerPeriodicFunctionRing
             sage: ipfr = IntegerPeriodicFunctionRing(QQ)
             sage: ipfr.is_unique_factorization_domain()
             False
@@ -408,4 +408,3 @@ class IntegerPeriodicFunctionFunctor(ConstructionFunctor):
     def merge(self, other):
         if isinstance(other, type(self)):
             return self
-

@@ -1,4 +1,4 @@
-from ehrhart_polynomial import ehrhart_polynomial, QuasiPolynomialRing
+from ehrhart_quasi_polynomial import ehrhart_quasi_polynomial, QuasiPolynomialRing
 
 import sage.all
 from sage.arith.misc import GCD
@@ -29,7 +29,7 @@ class TestTriangleFormula(TestCase):
             return 0
 
         vertices = triangle.Vrepresentation()
-        ehr_pol = ehrhart_polynomial(vertices)
+        ehr_pol = ehrhart_quasi_polynomial(vertices)
         return ehr_pol
 
     def compare(self, m, n):

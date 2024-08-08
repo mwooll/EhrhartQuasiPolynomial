@@ -11,10 +11,12 @@ from sage.rings.rational_field import QQ
 from sage.rings.polynomial.polynomial_ring_constructor import PolynomialRing
 from sage.geometry.polyhedron.constructor import Polyhedron
 
+
 R = PolynomialRing(QQ, "x", sparse=False)
 x = R.gen()
 
 QPR = QuasiPolynomialRing(QQ)
+
 
 # calculate ehrhart quasipolynomial
 def ehrhart_quasi_polynomial(vertices):
@@ -256,8 +258,8 @@ def _get_bounding_box_rational(mins, maxs, factor):
 
     TESTS::
 
-        sage: from ehrhart_quasi_polynomial.ehrhart_quasi_polynomial import (_get_bounding_box_rational,
-        ....:                                                    _get_bounding_extrema)
+        sage: from ehrhart_quasi_polynomial.ehrhart_quasi_polynomial import (
+        ....:               _get_bounding_box_rational, _get_bounding_extrema)
         sage: mins, maxs = _get_bounding_extrema([[0, 0], [1/2, 3/2]], 2)
         sage: list(_get_bounding_box_rational(mins, maxs, 2))
         [(0, 0), (0, 1), (0, 2), (0, 3),

@@ -11,5 +11,3 @@ from .ehrhart_quasi_polynomial import (ehrhart_quasi_polynomial,
                                        _get_bounding_box, _get_bounding_box_rational,
                                        _simplify_vertices, _drop_constant_dimensions,
                                        _drop_dimensions, _scale_down_vertices)
-
-from .secondary_fan import secondary_fan

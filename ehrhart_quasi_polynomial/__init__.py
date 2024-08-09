@@ -12,4 +12,4 @@ from .ehrhart_quasi_polynomial import (ehrhart_quasi_polynomial,
                                        _simplify_vertices, _drop_constant_dimensions,
                                        _drop_dimensions, _scale_down_vertices)
 
-from .gfan import secondary_fan
+from .secondary_fan import secondary_fan

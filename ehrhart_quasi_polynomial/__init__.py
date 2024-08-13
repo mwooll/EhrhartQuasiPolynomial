@@ -11,3 +11,7 @@ from .ehrhart_quasi_polynomial import (ehrhart_quasi_polynomial,
                                        _get_bounding_box, _get_bounding_box_rational,
                                        _simplify_vertices, _drop_constant_dimensions,
                                        _drop_dimensions, _scale_down_vertices)
+
+from .ehrhart_piecewise import (piecewise_ehrhart_quasi_polynomial,
+                                create_polytope_from_matrix, secondary_fan,
+                                _estimate_period, _compute_piecewise)

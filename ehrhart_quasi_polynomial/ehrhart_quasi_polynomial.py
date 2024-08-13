@@ -52,6 +52,9 @@ def ehrhart_quasi_polynomial(vertices):
         sage: ehrhart_quasi_polynomial(half_unit_cube)
         QuasiPolynomialElement(Ring of Quasi-Polynomials over Rational Field, [[1, 1/8], [3/2, 3/8], [3/4, 3/8], [1/8]])
     """
+    if not vertices: # catches empty lists and tuples
+        return QPR.zero()
+
     y_values, period, scale_factor = _points_contained_sequence(vertices)
 
     interpolation_points = [(k+1, y) for k, y in enumerate(y_values)]

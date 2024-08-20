@@ -15,13 +15,6 @@ from sage.rings.rational_field import QQ
 from sage.structure.element import Matrix
 
 class PiecewiseEhrhartQuasiPolynomial():
-    """
-    Compute the piecewise Ehrhart quasi-polynomials of the polytopes defined by
-        Ax <= b
-    where the inequality is understood componentwise
-    on the chambers of the secondary fan associated with the matrix ``A``.
-
-    """
     def __init__(self, A):
         self._A = A
         self._sec_fan = self._secondary_fan()
@@ -143,8 +136,8 @@ class PiecewiseEhrhartQuasiPolynomial():
         for vec in self._sec_fan.fan_dict["LINEALITY_SPACE"]:
             lin_vectors.append(free_module_element([int(val) for val in vec.split(" ")]))
 
-        change_of_basis_matrix = create_matrix(orth_vectors + lin_vectors)
-        inverse = change_of_basis_matrix.inverse()
+        self.change_of_basis_matrix = create_matrix(orth_vectors + lin_vectors)
+        inverse = self.change_of_basis_matrix.inverse()
 
         def projection(point):
             new_representation = free_module_element(point)*inverse
@@ -158,12 +151,19 @@ class PiecewiseEhrhartQuasiPolynomial():
         return self.evaluate(point)
 
     def evaluate(self, point):
+        if len(point) != self._amb_dim:
+            raise ValueError("Dimension of ``point`` needs to be equal to the ambient"
+                             f" dimension of ``self`` which is {self._amb_dim}")
+
         proj = self.projection(point)
         for idx, cone in enumerate(self._max_cones):
             if proj in cone:
                 keywords = {x: proj[k] for k, x in enumerate(self._str_var)}
                 return self._qps[idx](**keywords)
         return 0
+
+    def __repr__(self):
+        return f"PiecewiseEhrhartQuasiPolynomial({self._called})"
 
     def matrix(self):
         return self._A
@@ -174,13 +174,13 @@ class PiecewiseEhrhartQuasiPolynomial():
     def domains(self):
         return self._max_cones
 
-    def quasi_polynomials(self):
+    def functions(self):
         return self._qps
 
 
 def create_polytope_from_matrix(A, b):
     """
-    Returns the polytope whose faces are defined by
+    Return the polytope whose faces are defined by
         Ax <= b
     where the inequality is understood componentwise
 
@@ -201,7 +201,7 @@ def create_polytope_from_matrix(A, b):
         raise AttributeError("'b' needs to implement '__getitem__', " +
                              "needed for indexing: b[0]")
     if A.nrows() != len(b):
-        raise ValueError("Dimensions of 'A' and 'b' need to be compatible, need "+
+        raise ValueError("Dimensions of 'A' and 'b' need to be compatible, need "
                          f"A.nrows == len(b), but have {A.nrows()} != {len(b)}")
     inequalities = [[b[k]] + list(-A.rows()[k]) for k in range(A.nrows())]
     return Polyhedron(ieqs = inequalities)

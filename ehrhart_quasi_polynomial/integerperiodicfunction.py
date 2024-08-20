@@ -285,7 +285,8 @@ class IntegerPeriodicFunctionRing(UniqueRepresentation, CommutativeRing):
         """
         INPUT:
 
-        - ``base`` -- 
+        - ``base`` -- the base ring of ``self``
+            needs to be a commutative ring
         """
         if base not in CommutativeRings():
             raise ValueError(f"{base} is not a commutative ring.")

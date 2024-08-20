@@ -19,7 +19,7 @@ QPR = QuasiPolynomialRing(QQ)
 
 # calculate ehrhart quasipolynomial
 def ehrhart_quasi_polynomial(vertices):
-    r"""
+    """
     Compute the Ehrhart quasi-polynomial of the (convex) polytope defined by ``vertices``.
     Return a 'ehrhart_quasi_polynomial.quasipolynomial.QuasiPolynomialElement'
     
@@ -30,7 +30,8 @@ def ehrhart_quasi_polynomial(vertices):
     but for consistency always a QuasiPolynomial is returned.
 
     INPUTS:
-        - ``vertices`` : iterable of same length iterables
+
+    - ``vertices`` -- iterable of same length iterables
 
 
     EXAMPLES::
@@ -64,10 +65,10 @@ def ehrhart_quasi_polynomial(vertices):
 
 # interpolate polynomial
 def _interpolate_polynomial(points_sequence, period, scale_factor):
-    r"""
-    Computes the Quasi-Polynomial which evaluates to 'points_sequence' and has
+    """
+    Computes the Quasi-Polynomial which evaluates to ``points_sequence`` and has
     the specified period.
-    Return a 'ehrhart_quasi_polynomial.quasipolynomial.QuasiPolynomialElement'
+    Return instance of ``ehrhart_quasi_polynomial.quasipolynomial.QuasiPolynomialElement``
 
     TESTS:
 
@@ -101,9 +102,9 @@ def _interpolate_polynomial(points_sequence, period, scale_factor):
     return _construct_quasipolynomial(polynomials, period)
 
 def _construct_quasipolynomial(polynomials, period):
-    r"""
-    Construct a Quasi-Polynomial out of 'polynomials' with the specified period.
-    Return a 'ehrhart_quasi_polynomial.quasipolynomial.QuasiPolynomialElement'
+    """
+    Construct a Quasi-Polynomial out of ``polynomials`` with the specified ``period``.
+    Return instance of ``ehrhart_quasi_polynomial.quasipolynomial.QuasiPolynomialElement``
 
     TESTS::
 
@@ -131,11 +132,11 @@ def _construct_quasipolynomial(polynomials, period):
 
 # points contained
 def _points_contained_sequence(vertices):
-    r"""
-    Compute sequence [(k, a_k)] where a_k is the number of integral points of 'vertices'*k,
-    and k goes from 0 to (period of vertices)*(dimension of vertices).
-    Return the computed sequence, 'scale_factor' from '_scale_down_vertices()'
-    and the period of 'vertices'
+    """
+    Compute sequence [(k, a_k)] where a_k is the number of integral points of ``vertices``*k,
+    and k goes from 0 to (period of ``vertices``)*(dimension of ``vertices``).
+    Return the computed sequence, ``scale_factor`` from ``_scale_down_vertices()``
+    and the period of ``vertices``.
 
     TESTS::
 
@@ -176,8 +177,8 @@ def _points_contained_sequence(vertices):
     return counting_sequence, polytope_period, scale_factor
 
 def _points_contained(poly, box):
-    r"""
-    Return the number of points in 'box' which are inside 'poly'.
+    """
+    Return the number of points in ``box`` which are inside ``poly``.
 
     TESTS::
 
@@ -197,8 +198,8 @@ def _points_contained(poly, box):
 
 # period
 def _get_period(vertices):
-    r"""
-    Return the period of 'vertices'. The period of a set of vertices
+    """
+    Return the period of ``vertices``. The period of a set of vertices
     is defined as the lcm of the denominators of all vertices.
 
     TESTS::
@@ -218,8 +219,8 @@ def _get_period(vertices):
 
 # bounding box
 def _get_bounding_extrema(vertices, dimension):
-    r"""
-    Return the bounding box which encompasses 'vertices'.
+    """
+    Return the bounding box which encompasses ``vertices``.
 
     TESTS::
 
@@ -236,9 +237,9 @@ def _get_bounding_extrema(vertices, dimension):
     return mins, maxs
 
 def _get_bounding_box(mins, maxs, factor):
-    r"""
-    Return an iterator of the integral points between 'mins'*'factor' and
-    'maxs'*'factor'.
+    """
+    Return an iterator of the integral points between ``mins*factor`` and
+    ``maxs*factor``.
 
     TESTS::
 
@@ -254,9 +255,9 @@ def _get_bounding_box(mins, maxs, factor):
                      for mini, maxi in zip(mins, maxs)])
 
 def _get_bounding_box_rational(mins, maxs, factor):
-    r"""
-    Return an iterator of the integral points between ceil('mins'*'factor') and
-    floor('maxs'*'factor').
+    """
+    Return an iterator of the integral points between ``ceil(mins*factor)`` and
+    ``floor(maxs*factor)``.
 
     TESTS::
 
@@ -272,7 +273,7 @@ def _get_bounding_box_rational(mins, maxs, factor):
 
 # simplify polytope
 def _simplify_vertices(vertices, dimension):
-    r"""
+    """
     Simplify the vertices as much as possible:
         - drop constant dimensions
         - scale down remaining dimensions
@@ -303,8 +304,8 @@ def _simplify_vertices(vertices, dimension):
     return new_vertices, new_mins, new_maxs, new_dim, scale_factor
 
 def _drop_constant_dimensions(vertices, dimension):
-    r"""
-    Drop all dimensions <= dimension of 'vertices' where every vertex has the same value.
+    """
+    Drop all dimensions <= ``dimension`` of ``vertices`` where every vertex has the same value.
 
     Return cleaned vertices, minimum and maximum over all vertices and dimension,
     and the new dimension of the vertices.
@@ -331,8 +332,8 @@ def _drop_constant_dimensions(vertices, dimension):
     return vertices, mins, maxs, new_dimension
 
 def _drop_dimensions(to_reduce, keep_filter):
-    r"""
-    Return 'to_reduce' where the dimensions are filtered according to 'keep_filter'
+    """
+    Return ``to_reduce`` where the dimensions were filtered according to ``keep_filter``.
 
     TESTS::
 
@@ -346,9 +347,9 @@ def _drop_dimensions(to_reduce, keep_filter):
             for vertex in to_reduce]
 
 def _scale_down_vertices(vertices):
-    r"""
-    Computes 'scale_factor' as gcd of all coordinates of the vertices.
-    Return vertices divided by scale_factor and 'scale_factor'.
+    """
+    Computes ``scale_factor`` as gcd of all coordinates of the ``vertices``.
+    Return ``vertices`` divided by scale_factor and ``scale_factor``.
 
     TESTS::
 

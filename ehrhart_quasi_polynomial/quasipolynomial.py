@@ -251,9 +251,6 @@ class QuasiPolynomialElement(RingElement):
 
 
 class QuasiPolynomialRing(UniqueRepresentation, CommutativeRing):
-    """
-    
-    """
     Element = QuasiPolynomialElement
     def __init__(self, base_ring):
         """

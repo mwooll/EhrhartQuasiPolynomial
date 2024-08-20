@@ -3,7 +3,6 @@ from collections import deque
 
 from .quasipolynomial import QuasiPolynomialRing
 
-import sage.all
 from sage.arith.misc import gcd
 from sage.arith.functions import lcm
 from sage.functions.other import ceil, floor

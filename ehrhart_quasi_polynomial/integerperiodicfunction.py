@@ -8,7 +8,7 @@ from sage.structure.element import RingElement
 
 
 class IntegerPeriodicFunctionElement(RingElement):
-    r"""
+    """
     An element of the Ring of Integer Periodic Functions.
     
     This class should not be used to construct elements, rather construct an
@@ -29,10 +29,11 @@ class IntegerPeriodicFunctionElement(RingElement):
             3 if k%3 == 2
     """
     def __init__(self, parent, constants=None):
-        r"""
+        """
         INPUT:
-            - parent : instance of 'IntegerPeriodicFunctionRing'
-            - constants : iterable of elements of 'parent.base()' (default=None)
+
+        - ``parent`` -- instance of ``IntegerPeriodicFunctionRing``
+        - ``constants`` -- iterable of elements of ``parent.base()`` (default: ``None``)
         """
         base = parent.base()
         if constants is None:
@@ -46,9 +47,9 @@ class IntegerPeriodicFunctionElement(RingElement):
         RingElement.__init__(self, parent)
 
     def _calculate_period(self, constants):
-        r"""
-        Calculate the period of "constants".
-        To get the period of self call '.period()'.
+        """
+        Calculate the period of ``constants``.
+        To get the period of ``self`` call ``self.period()``.
         """
         length = len(constants)
 
@@ -64,9 +65,8 @@ class IntegerPeriodicFunctionElement(RingElement):
         return period
 
     def _get_period_divisor(self, constants, length, prime, power):
-        r"""
-        Return the largest power of 'prime' which divides the period of 'constants'.
-        Needed to compute the period of 'constants'.
+        """
+        Return the largest power of ``prime`` which divides the period of ``constants``.
         """
         last_div = 1
         fact = prime
@@ -79,8 +79,8 @@ class IntegerPeriodicFunctionElement(RingElement):
         return last_div
 
     def period(self):
-        r"""
-        Return the period of self
+        """
+        Return the period of ``self``.
 
         EXAMPLES::
 
@@ -97,8 +97,8 @@ class IntegerPeriodicFunctionElement(RingElement):
         return self._period
 
     def constants(self):
-        r"""
-        Return the constants of self
+        """
+        Return the constants of ``self``.
 
         EXAMPLES::
 
@@ -110,11 +110,12 @@ class IntegerPeriodicFunctionElement(RingElement):
         return self._constants
 
     def __call__(self, k):
-        r"""
-        Return the value at 'k'%period.
+        """
+        Return the evaluation of ``self`` at ``k``.
         
         INPUT:
-            - k : integer
+
+        - ``k`` -- integer
 
         EXAMPLES::
             
@@ -134,11 +135,12 @@ class IntegerPeriodicFunctionElement(RingElement):
             raise TypeError("Integer periodic functions can only be evaluated at integer values.")
 
     def __getitem__(self, k):
-        r"""
-        Return the value at k%period or for all elements in the slice.
+        """
+        Return the evaluation of ``self`` at ``k``.
 
         INPUT:
-            - k : integer or slice
+
+        - ``k`` -- integer or slice.
 
         EXAMPLES::
             
@@ -173,8 +175,8 @@ class IntegerPeriodicFunctionElement(RingElement):
         return function_str
 
     def __eq__(self, other):
-        r"""
-        Return whether self and 'other' are considered to be equal in the base ring
+        """
+        Return whether ``self`` and ``other`` are considered to be equal in the base ring
 
         TESTS::
 
@@ -193,8 +195,8 @@ class IntegerPeriodicFunctionElement(RingElement):
             return self._period == 1 and self._constants[0] == other
 
     def __bool__(self):
-        r"""
-        Return whether self is a non-zero element of the ring.
+        """
+        Return whether ``self`` is a non-zero element of the ring.
         
         TESTS::
 
@@ -210,8 +212,8 @@ class IntegerPeriodicFunctionElement(RingElement):
         return self._period != 1 or bool(self._constants[0] != self.parent().base().zero())
 
     def _neg_(self):
-        r"""
-        Return the additive inverse of self
+        """
+        Return the additive inverse of ``self``.
 
         TESTS::
 
@@ -223,7 +225,7 @@ class IntegerPeriodicFunctionElement(RingElement):
         return self.__class__(self.parent(), [-c for c in self._constants])
 
     def _add_(self, other):
-        r"""
+        """
         Ring addition
         
         TESTS::
@@ -242,7 +244,7 @@ class IntegerPeriodicFunctionElement(RingElement):
         return self.__class__(self.parent(), add_constants)
 
     def _sub_(self, other):
-        r"""
+        """
         TESTS::
 
             sage: from ehrhart_quasi_polynomial.integerperiodicfunction import IntegerPeriodicFunctionRing
@@ -255,7 +257,7 @@ class IntegerPeriodicFunctionElement(RingElement):
         return self.__add__(-other)
 
     def _mul_(self, other):
-        r"""
+        """
         Ring multiplication and scalar multiplication
         
         TESTS::
@@ -280,16 +282,21 @@ class IntegerPeriodicFunctionRing(UniqueRepresentation, CommutativeRing):
     # needed for automatic coercion
     Element = IntegerPeriodicFunctionElement
     def __init__(self, base):
+        """
+        INPUT:
+
+        - ``base`` -- 
+        """
         if base not in CommutativeRings():
             raise ValueError(f"{base} is not a commutative ring.")
         CommutativeRing.__init__(self, base)                         
             
     def _repr_(self):
-        return f"Ring of Integer Periodic Functions over {self.base()}"
+        return f"Ring of Integer Periodic Functions over {self.base_ring()}"
 
     def base_ring(self):
-        r"""
-        Return the base_ring of the base
+        """
+        Return the base_ring of ``self``.
 
         EXAMPLES::
 
@@ -302,8 +309,9 @@ class IntegerPeriodicFunctionRing(UniqueRepresentation, CommutativeRing):
         return self.base().base_ring()
 
     def characteristic(self):
-        r"""
-        Return the characteristic of the base
+        """
+        Return the characteristic of ``self.base_ring``.
+
         EXAMPLES::
 
             sage: from ehrhart_quasi_polynomial.integerperiodicfunction import IntegerPeriodicFunctionRing
@@ -315,8 +323,8 @@ class IntegerPeriodicFunctionRing(UniqueRepresentation, CommutativeRing):
         return self.base().characteristic()
 
     def _element_constructor_(self, *args, **kwds):
-        r"""
-        Handles the automatic coercion of objects to IntegerPeriodicFunctionElement
+        """
+        Handles the automatic coercion of objects to ``IntegerPeriodicFunctionElement``.
 
         EXAMPLES::
 
@@ -345,9 +353,9 @@ class IntegerPeriodicFunctionRing(UniqueRepresentation, CommutativeRing):
             raise TypeError(f"Unable to coerce {x} to an element of {self}")
 
     def _coerce_map_from_(self, S):
-        r"""
-        Return whether there is a coercion map from S to self.
-        If so "self(s)" should work for all s in S
+        """
+        Return whether there is a coercion map from ``S`` to ``self``.
+        If so ``self(s)`` should work whenever ``s in S`` is ``True``.
 
         TESTS::
 
@@ -364,13 +372,13 @@ class IntegerPeriodicFunctionRing(UniqueRepresentation, CommutativeRing):
             return True
 
     def construction(self):
-        r"""
+        """
         Return a ConstructionFunctor
         """
         return IntegerPeriodicFunctionFunctor(self._reduction[1][1:], self._reduction[2]), self.base()
 
     def is_integral_domain(self):
-        r"""
+        """
         Return whether self is an integral domain, which is False
 
         TESTS::
@@ -383,7 +391,7 @@ class IntegerPeriodicFunctionRing(UniqueRepresentation, CommutativeRing):
         return False
 
     def is_unique_factorization_domain(self):
-        r"""
+        """
         Return whether self is a unique factorization domain (UFD), which is False
 
         TESTS::

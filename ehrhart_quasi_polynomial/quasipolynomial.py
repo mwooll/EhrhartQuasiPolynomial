@@ -9,13 +9,12 @@ from sage.structure.element import RingElement
 from sage.structure.unique_representation import UniqueRepresentation
 
 
-
 class QuasiPolynomialElement(RingElement):
-    r"""
+    """
     An element of the Ring of Quasi-Polynomial.
 
     This class should not be used to construct elements, rather construct an
-    instance of the parent class 'QuasiPolynomialRing' and let that
+    instance of the parent class ``QuasiPolynomialRing`` and let that
     construct the elements, as in the examples below.
 
 
@@ -27,13 +26,14 @@ class QuasiPolynomialElement(RingElement):
         QuasiPolynomialElement(Ring of Quasi-Polynomials over Rational Field, [[0]])
         sage: print(qpr([[0, 1], 2, 3])) # doctest: +NORMALIZE_WHITESPACE
         QuasiPolynomial given by
-        [0, 1] + [2]*k + [3]*k^2
+        [0, 1] + [2]*t + [3]*t^2
     """
     def __init__(self, parent, coefficients=None):
-        r"""
+        """
         INPUT:
-            - parent : instance of 'QuasiPolynomialRing'
-            - coefficients : iterable of elements of 'parent.base()' (default=None)
+
+        - ``parent`` -- instance of ``QuasiPolynomialRing``
+        - ``coefficients`` -- iterable of elements of ``parent.base()`` (default : ``None``)
         """
         base = parent.base()
         if coefficients is None:
@@ -61,8 +61,8 @@ class QuasiPolynomialElement(RingElement):
         return period
 
     def __call__(self, value):
-        r"""
-        Return self evaluated at 'value'
+        """
+        Return ``self`` evaluated at ``value``.
 
         EXAMPLES::
 
@@ -82,8 +82,8 @@ class QuasiPolynomialElement(RingElement):
         return result
 
     def coefficients(self):
-        r"""
-        Return the coefficients of self
+        """
+        Return the coefficients of ``self``.
 
         EXAMPLES::
 
@@ -95,8 +95,8 @@ class QuasiPolynomialElement(RingElement):
         return self._coefficients
 
     def degree(self):
-        r"""
-        Return the degree of self
+        """
+        Return the degree of ``self``.
 
         EXAMPLES::
 
@@ -110,8 +110,8 @@ class QuasiPolynomialElement(RingElement):
         return self._degree
 
     def period(self):
-        r"""
-        Return the period of self
+        """
+        Return the period of ``self``.
 
         EXAMPLES::
 
@@ -128,7 +128,7 @@ class QuasiPolynomialElement(RingElement):
         function_str = "QuasiPolynomial given by \n"
         function_str += f"{self._coefficients[0].constants()}"
         for power, coef in enumerate(self._coefficients[1:]):
-            function_str += f" + {coef.constants()}*k" + f"^{power+1}"*(power>0)
+            function_str += f" + {coef.constants()}*t" + f"^{power+1}"*(power>0)
         return function_str
 
     def __repr__(self):
@@ -136,8 +136,8 @@ class QuasiPolynomialElement(RingElement):
         return f"QuasiPolynomialElement({self.parent()}, {coefficients})"
 
     def __eq__(self, other):
-        r"""
-        Return whether self and other are considered equal in the ring
+        """
+        Return whether ``self`` and ``other`` are considered equal.
 
         TESTS::
 
@@ -158,8 +158,8 @@ class QuasiPolynomialElement(RingElement):
             return self._degree == 0 and self._coefficients[0] == other
 
     def __bool__(self):
-        r"""
-        Return whether self is a non-zero element of the ring.
+        """
+        Return whether ``self`` is a non-zero element of the ring.
 
         TESTS::
 
@@ -174,8 +174,8 @@ class QuasiPolynomialElement(RingElement):
                 or bool(self._coefficients[0]))
 
     def _neg_(self):
-        r"""
-        Return the additive inverse of self
+        """
+        Return the additive inverse of ``self``.
 
         TESTS::
 
@@ -187,7 +187,7 @@ class QuasiPolynomialElement(RingElement):
         return self.__class__(self.parent(), [-c for c in self._coefficients])
 
     def _add_(self, other):
-        r"""
+        """
         Ring addition
 
         TESTS::
@@ -213,7 +213,7 @@ class QuasiPolynomialElement(RingElement):
         return self.__class__(self.parent(), add_coefficients)
 
     def _sub_(self, other):
-        r"""
+        """
         TESTS::
 
             sage: from ehrhart_quasi_polynomial.quasipolynomial import QuasiPolynomialRing
@@ -228,7 +228,7 @@ class QuasiPolynomialElement(RingElement):
         return self.__add__(-other)
 
     def _mul_(self, other):
-        r"""
+        """
         Ring multiplication and scalar multiplication
 
         TESTS::
@@ -251,15 +251,24 @@ class QuasiPolynomialElement(RingElement):
 
 
 class QuasiPolynomialRing(UniqueRepresentation, CommutativeRing):
+    """
+    
+    """
     Element = QuasiPolynomialElement
-    def __init__(self, base_ring, num_variables=1):
+    def __init__(self, base_ring):
+        """
+        INPUT:
+
+        - ``base_ring`` -- the base ring for the underlying ``IntegerPeriodicFunctionRing``,
+            needs to be a commutative ring
+        """
         base = IntegerPeriodicFunctionRing(base_ring)
         if base not in CommutativeRings():
             raise ValueError(f"{base} is not a commutative ring.")
         CommutativeRing.__init__(self, base)
 
     def _repr_(self):
-        r"""
+        """
         TESTS::
 
             sage: from ehrhart_quasi_polynomial.quasipolynomial import QuasiPolynomialRing
@@ -272,8 +281,8 @@ class QuasiPolynomialRing(UniqueRepresentation, CommutativeRing):
 
     @cached_method
     def gen(self, n=0):
-        r"""
-        Return the indeterminate generator of this quasi-polynomial ring.
+        """
+        Return the indeterminate generator of ``self``.
 
         EXAMPLES::
 
@@ -294,8 +303,8 @@ class QuasiPolynomialRing(UniqueRepresentation, CommutativeRing):
         return self.element_class(self, [0, 1])
 
     def base_ring(self):
-        r"""
-        Return the base ring of the underlying IntegerPeriodicFunctionRing.
+        """
+        Return the base ring of the IntegerPeriodicFunctionRing of ``self``.
 
         EXAMPLES::
 
@@ -308,8 +317,8 @@ class QuasiPolynomialRing(UniqueRepresentation, CommutativeRing):
         return self.base().base_ring()
 
     def characteristic(self):
-        r"""
-        Return the characteristic of the underlying IntegerPeriodicFunctionRing.
+        """
+        Return the characteristic of the IntegerPeriodicFunctionRing of ``self``.
 
         EXAMPLES::
 
@@ -340,9 +349,9 @@ class QuasiPolynomialRing(UniqueRepresentation, CommutativeRing):
         return self.element_class(P, x, **kwds)
 
     def _coerce_map_from_(self, S):
-        r"""
-        Return whether there is a coercion map from S to self.
-        If so "self(s)" should work for all s in S
+        """
+        Return whether there is a coercion map from ``S`` to ``self``.
+        If so ``self(s)`` should work for all ``s in S``.
         """
         if self.base().base_ring().has_coerce_map_from(S):
             return True
@@ -350,14 +359,14 @@ class QuasiPolynomialRing(UniqueRepresentation, CommutativeRing):
             return True
 
     def construction(self):
-        r"""
-        Return a ConstructionFunctor
+        """
+        Return the construction functor corresponding to ``self``.
         """
         return QuasiPolynomialFunctor(self._reduction[1][1:], self._reduction[2]), self.base().base_ring()
 
     def is_integral_domain(self):
-        r"""
-        Return whether self is an integral domain, which is False
+        """
+        Return ``False``, since quasi-polynomial rings are never integral domains.
 
         TESTS::
 
@@ -369,8 +378,8 @@ class QuasiPolynomialRing(UniqueRepresentation, CommutativeRing):
         return False
 
     def is_unique_factorization_domain(self):
-        r"""
-        Return whether self is a unique factorization domain (UFD), which is False
+        """
+        Return ``False``, since quasi-polynomial rings are never unique factorization domains (UFD).
 
         TESTS::
 

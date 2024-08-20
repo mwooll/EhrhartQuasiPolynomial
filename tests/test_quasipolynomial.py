@@ -49,10 +49,10 @@ class TestQuasiPolynomial(TestCase):
     def test_str(self):
         self.assertEqual(str(self.poly),
                           "QuasiPolynomial given by \n" +
-                          "[1] + [2]*k + [3]*k^2")
+                          "[1] + [2]*t + [3]*t^2")
         self.assertEqual(str(self.qp),
                          "QuasiPolynomial given by \n"
-                         + "[1] + [2, 3]*k + [1, 2, 3]*k^2")
+                         + "[1] + [2, 3]*t + [1, 2, 3]*t^2")
 
     # math support
     def test_neg(self):

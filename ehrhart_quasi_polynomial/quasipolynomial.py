@@ -1,3 +1,5 @@
+from collections import deque
+
 from .integerperiodicfunction import IntegerPeriodicFunctionRing
 
 from sage.arith.functions import lcm
@@ -8,6 +10,38 @@ from sage.rings.ring import CommutativeRing
 from sage.structure.element import RingElement
 from sage.structure.unique_representation import UniqueRepresentation
 
+
+def construct_quasipolynomial(polynomials, period, QPR):
+    """
+    Construct a Quasi-Polynomial out of ``polynomials`` with the specified ``period``.
+    Return instance of ``ehrhart_quasi_polynomial.quasipolynomial.QuasiPolynomialElement``
+
+    TESTS::
+
+        sage: from ehrhart_quasi_polynomial.quasipolynomial import (construct_quasipolynomial,
+        ....:                                                       QuasiPolynomialRing)
+        sage: x = PolynomialRing(QQ, "x").gen()
+        sage: QPR = QuasiPolynomialRing(QQ)
+        sage: polys = [x+1, x**2+2, x+3, x**2+4]
+        sage: construct_quasipolynomial(polys, 4, QPR) # doctest: +NORMALIZE_WHITESPACE
+        QuasiPolynomialElement(Ring of Quasi-Polynomials over Rational Field,
+                               [[4, 1, 2, 3], [0, 1], [1, 0]])
+    """
+    polynomials = deque(polynomials)
+    polynomials.rotate(1)
+
+    degrees = [poly.degree() for poly in polynomials]
+    max_degree = max(degrees)
+    periodic_coefficients = [0]*(max_degree + 1)
+
+    for degree in range(max_degree + 1):
+        periodic_values = [0]*period
+        for index, poly in enumerate(polynomials):
+            if degree <= degrees[index]:
+                periodic_values[index] = poly.list()[degree]
+        periodic_coefficients[degree] = periodic_values
+
+    return QPR(periodic_coefficients)
 
 class QuasiPolynomialElement(RingElement):
     """
@@ -89,8 +123,9 @@ class QuasiPolynomialElement(RingElement):
 
             sage: from ehrhart_quasi_polynomial.quasipolynomial import QuasiPolynomialRing
             sage: qpr = QuasiPolynomialRing(QQ)
-            sage: qpr([2, [0, 1]]).coefficients()
-            [IntegerPeriodicFunctionElement(Ring of Integer Periodic Functions over Rational Field, [2]), IntegerPeriodicFunctionElement(Ring of Integer Periodic Functions over Rational Field, [0, 1])]
+            sage: qpr([2, [0, 1]]).coefficients() # doctest: +NORMALIZE_WHITESPACE
+            [IntegerPeriodicFunctionElement(Ring of Integer Periodic Functions over Rational Field, [2]),
+             IntegerPeriodicFunctionElement(Ring of Integer Periodic Functions over Rational Field, [0, 1])]
         """
         return self._coefficients
 
@@ -219,11 +254,13 @@ class QuasiPolynomialElement(RingElement):
             sage: from ehrhart_quasi_polynomial.quasipolynomial import QuasiPolynomialRing
             sage: qpr = QuasiPolynomialRing(QQ)
             sage: q = qpr([[1, 2], [1, 2]])
-            sage: q - 1
-            QuasiPolynomialElement(Ring of Quasi-Polynomials over Rational Field, [[0, 1], [1, 2]])
+            sage: q - 1 # doctest: +NORMALIZE_WHITESPACE
+            QuasiPolynomialElement(Ring of Quasi-Polynomials over Rational Field,
+                                   [[0, 1], [1, 2]])
             sage: r = qpr([[1, 2, 3], [2, 1]])
-            sage: q - r
-            QuasiPolynomialElement(Ring of Quasi-Polynomials over Rational Field, [[0, 0, -2, 1, -1, -1], [-1, 1]])
+            sage: q - r # doctest: +NORMALIZE_WHITESPACE
+            QuasiPolynomialElement(Ring of Quasi-Polynomials over Rational Field,
+                                   [[0, 0, -2, 1, -1, -1], [-1, 1]])
         """
         return self.__add__(-other)
 

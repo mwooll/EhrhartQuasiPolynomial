@@ -172,7 +172,7 @@ class QuasiPolynomialElement(RingElement):
 
     def __eq__(self, other):
         """
-        Return whether ``self`` and ``other`` are considered equal.
+        Return whether ``self`` and ``other`` are considered equal in ``self.parent()``.
 
         TESTS::
 
@@ -194,7 +194,7 @@ class QuasiPolynomialElement(RingElement):
 
     def __bool__(self):
         """
-        Return whether ``self`` is a non-zero element of the ring.
+        Return whether ``self`` is a non-zero element of the ring ``self.parent()``.
 
         TESTS::
 

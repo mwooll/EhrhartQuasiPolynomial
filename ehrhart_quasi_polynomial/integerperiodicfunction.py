@@ -168,7 +168,7 @@ class IntegerPeriodicFunctionElement(RingElement):
     def _repr_(self):
         return f"IntegerPeriodicFunctionElement({self.parent()}, {self._constants})"
 
-    def __str__(self):
+    def _str_(self):
         function_str = f"IntegerPeriodicFunction over {self.parent().base_ring()} given by"
         for ind, val in enumerate(self._constants):
             function_str += f"\n\t{val} if k%{self._period} == {ind}"
@@ -176,7 +176,7 @@ class IntegerPeriodicFunctionElement(RingElement):
 
     def __eq__(self, other):
         """
-        Return whether ``self`` and ``other`` are considered to be equal in the base ring
+        Return whether ``self`` and ``other`` are considered equal in ``self.parent()``.
 
         TESTS::
 
@@ -196,7 +196,7 @@ class IntegerPeriodicFunctionElement(RingElement):
 
     def __bool__(self):
         """
-        Return whether ``self`` is a non-zero element of the ring.
+        Return whether ``self`` is a non-zero element of the ring ``self.parent()``.
         
         TESTS::
 
@@ -293,7 +293,7 @@ class IntegerPeriodicFunctionRing(UniqueRepresentation, CommutativeRing):
         CommutativeRing.__init__(self, base)                         
             
     def _repr_(self):
-        return f"Ring of Integer Periodic Functions over {self.base_ring()}"
+        return f"Ring of Integer Periodic Functions over {self.base()}"
 
     def base_ring(self):
         """

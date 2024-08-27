@@ -1,7 +1,6 @@
 from itertools import product
-from collections import deque
 
-from .quasipolynomial import QuasiPolynomialRing
+from .quasipolynomial import QuasiPolynomialRing, construct_quasipolynomial
 
 from sage.arith.misc import gcd
 from sage.arith.functions import lcm
@@ -49,8 +48,9 @@ def ehrhart_quasi_polynomial(vertices):
 
         sage: half_unit_cube = [[0, 0, 0], [0, 0, 1/2], [0, 1/2, 1/2], [0, 1/2, 0],
         ....:           [1/2, 0, 0], [1/2, 0, 1/2], [1/2, 1/2, 1/2], [1/2, 1/2, 0]]
-        sage: ehrhart_quasi_polynomial(half_unit_cube)
-        QuasiPolynomialElement(Ring of Quasi-Polynomials over Rational Field, [[1, 1/8], [3/2, 3/8], [3/4, 3/8], [1/8]])
+        sage: ehrhart_quasi_polynomial(half_unit_cube) # doctest: +NORMALIZE_WHITESPACE
+        QuasiPolynomialElement(Ring of Quasi-Polynomials over Rational Field,
+                               [[1, 1/8], [3/2, 3/8], [3/4, 3/8], [1/8]])
     """
     if not vertices: # catches empty lists and tuples
         return QPR.zero()
@@ -61,6 +61,44 @@ def ehrhart_quasi_polynomial(vertices):
     polynomial = _interpolate_polynomial(interpolation_points, period, scale_factor)
 
     return polynomial
+
+# period
+def get_period(vertices):
+    """
+    Return the period of ``vertices``. The period of a set of vertices
+    is defined as the lcm of the denominators of all vertices.
+
+    EXAMPLES::
+
+        sage: from ehrhart_quasi_polynomial.ehrhart_quasi_polynomial import get_period
+        sage: get_period([[0, 0], [1, 0], [1, 1], [0, 1]])
+        1
+        sage: get_period([[-1/2, 0], [2/3, 0], [0, 1/5]])
+        30
+        sage: get_period([[1, 1/2], [2, 1/4], [3, 1/8]])
+        8
+    """
+    denominators = [QQ(coordinate).denominator() for vertex in vertices
+                    for coordinate in vertex]
+    period = lcm(denominators)
+    return period
+
+# gcd
+def get_gcd(vertices):
+    """
+    Return the gcd of the vertices.
+    The gcd of a set of vertices is the largest integer such that every
+    coordinate of every vertex is divisible by said integer.
+
+    EXAMPLES::
+
+        sage: from ehrhart_quasi_polynomial.ehrhart_quasi_polynomial import get_gcd
+        sage: get_gcd([[2, 0], [4, 6]])
+        2
+        sage: get_gcd([[0, 0], [2, 0], [0, 3]])
+        1
+    """
+    return gcd(num for vertex in vertices for num in vertex)
 
 
 # interpolate polynomial
@@ -84,9 +122,10 @@ def _interpolate_polynomial(points_sequence, period, scale_factor):
 
         sage: vertices = [[0, 0], [1/2, 1/3]]
         sage: sequence, period, factor = _points_contained_sequence(vertices)
-        sage: points_sequence = [(k+1, y) for k, y in enumerate(sequence)]
-        sage: _interpolate_polynomial(points_sequence, period, factor)
-        QuasiPolynomialElement(Ring of Quasi-Polynomials over Rational Field, [[1, 5/6, 2/3, 1/2, 1/3, 1/6], [1/6]])
+        sage: points = [(k+1, y) for k, y in enumerate(sequence)]
+        sage: _interpolate_polynomial(points, period, factor) # doctest: +NORMALIZE_WHITESPACE
+        QuasiPolynomialElement(Ring of Quasi-Polynomials over Rational Field,
+                               [[1, 5/6, 2/3, 1/2, 1/3, 1/6], [1/6]])
     """
     if period == 1: # integral polytopes
         polynomial = R.lagrange_polynomial(points_sequence)
@@ -99,36 +138,8 @@ def _interpolate_polynomial(points_sequence, period, scale_factor):
         period_points = points_sequence[k::period]
         polynomials[k] = R.lagrange_polynomial(period_points)
 
-    return _construct_quasipolynomial(polynomials, period)
+    return construct_quasipolynomial(polynomials, period, QPR)
 
-def _construct_quasipolynomial(polynomials, period):
-    """
-    Construct a Quasi-Polynomial out of ``polynomials`` with the specified ``period``.
-    Return instance of ``ehrhart_quasi_polynomial.quasipolynomial.QuasiPolynomialElement``
-
-    TESTS::
-
-        sage: from ehrhart_quasi_polynomial.ehrhart_quasi_polynomial import _construct_quasipolynomial
-        sage: x = PolynomialRing(QQ, "x").gen()
-        sage: polys = [x+1, x**2+2, x+3, x**2+4]
-        sage: _construct_quasipolynomial(polys, 4)
-        QuasiPolynomialElement(Ring of Quasi-Polynomials over Rational Field, [[4, 1, 2, 3], [0, 1], [1, 0]])
-    """
-    polynomials = deque(polynomials)
-    polynomials.rotate(1)
-
-    degrees = [poly.degree() for poly in polynomials]
-    max_degree = max(degrees)
-    periodic_coefficients = [0]*(max_degree + 1)
-
-    for degree in range(max_degree + 1):
-        periodic_values = [0]*period
-        for index, poly in enumerate(polynomials):
-            if degree <= degrees[index]:
-                periodic_values[index] = poly.list()[degree]
-        periodic_coefficients[degree] = periodic_values
-
-    return QPR(periodic_coefficients)
 
 # points contained
 def _points_contained_sequence(vertices):
@@ -147,7 +158,7 @@ def _points_contained_sequence(vertices):
         ([1, 3, 3, 6, 6, 10], 2, 1)
     """
     dimension = len(vertices[0])
-    polytope_period = _get_period(vertices)
+    polytope_period = get_period(vertices)
 
     if polytope_period == 1:
         result = _simplify_vertices(vertices, dimension)
@@ -195,27 +206,6 @@ def _points_contained(poly, box):
         15
     """
     return sum(int(point in poly) for point in box)
-
-# period
-def _get_period(vertices):
-    """
-    Return the period of ``vertices``. The period of a set of vertices
-    is defined as the lcm of the denominators of all vertices.
-
-    TESTS::
-
-        sage: from ehrhart_quasi_polynomial.ehrhart_quasi_polynomial import _get_period
-        sage: _get_period([[0, 0], [1, 0], [1, 1], [0, 1]])
-        1
-        sage: _get_period([[-1/2, 0], [2/3, 0], [0, 1/5]])
-        30
-        sage: _get_period([[1, 1/2], [2, 1/4], [3, 1/8]])
-        8
-    """
-    denominators = [QQ(coordinate).denominator() for vertex in vertices
-                    for coordinate in vertex]
-    period = lcm(denominators)
-    return period
 
 # bounding box
 def _get_bounding_extrema(vertices, dimension):
@@ -277,7 +267,7 @@ def _simplify_vertices(vertices, dimension):
     Simplify the vertices as much as possible:
         - drop constant dimensions
         - scale down remaining dimensions
-    
+
     Return simplified vertices, minimums and maximums over all dimensions, the new
     dimension of the vertices and the factor by which the vertices were scaled down.
 
@@ -348,7 +338,7 @@ def _drop_dimensions(to_reduce, keep_filter):
 
 def _scale_down_vertices(vertices):
     """
-    Computes ``scale_factor`` as gcd of all coordinates of the ``vertices``.
+    Compute ``scale_factor`` as gcd of all coordinates of the ``vertices``.
     Return ``vertices`` divided by scale_factor and ``scale_factor``.
 
     TESTS::
@@ -359,6 +349,7 @@ def _scale_down_vertices(vertices):
         sage: _scale_down_vertices([[0, 1], [3, 5]])
         ([[0, 1], [3, 5]], 1)
     """
-    scale_factor = gcd(num for vertex in vertices for num in vertex)
+    scale_factor = get_gcd(vertices)
     vertices = [[num//scale_factor for num in vertex] for vertex in vertices]
     return vertices, scale_factor
+

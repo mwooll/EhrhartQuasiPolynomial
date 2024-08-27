@@ -1,6 +1,6 @@
 from ehrhart_quasi_polynomial import (ehrhart_quasi_polynomial,
                                       _points_contained_sequence, _points_contained,
-                                      _get_period, _get_bounding_extrema,
+                                      get_period, _get_bounding_extrema,
                                       _get_bounding_box, _get_bounding_box_rational,
                                       _simplify_vertices, _drop_constant_dimensions,
                                       _drop_dimensions, _scale_down_vertices,
@@ -106,16 +106,16 @@ class TestEhrhartPolynomial(TestCase):
 
 
     # period
-    def test__get_period(self):
+    def test_get_period(self):
         cube = [(0, 0, 0), (0, 0, 1), (0, 1, 0), (0, 1, 1),
                 (1, 0, 0), (1, 0, 1), (1, 1, 0), (1, 1, 1)]
-        self.assertEqual(_get_period(cube), 1)
+        self.assertEqual(get_period(cube), 1)
 
         simple = [(0, 0), (1/2, 0), (3/2, 1), (1, 1)]
-        self.assertEqual(_get_period(simple), 2)
+        self.assertEqual(get_period(simple), 2)
 
         fractions = [(1/2, 0), (0, 1/3), (1/4, 1), (1, 1/5)]
-        self.assertEqual(_get_period(fractions), 60)
+        self.assertEqual(get_period(fractions), 60)
 
 
     # bounding box

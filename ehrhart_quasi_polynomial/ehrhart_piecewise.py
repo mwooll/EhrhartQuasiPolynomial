@@ -4,7 +4,7 @@ from .ehrhart_quasi_polynomial import (ehrhart_quasi_polynomial,
                                        get_period, get_gcd)
 
 from sage.arith.functions import lcm
-from sage.functions.other import factorial, floor
+from sage.functions.other import factorial#, floor
 from sage.geometry.cone import Cone
 from sage.geometry.polyhedron.constructor import Polyhedron
 from sage.interfaces.gfan import gfan
@@ -26,8 +26,8 @@ class PiecewiseEhrhartQuasiPolynomial():
         self._compute_change_of_basis_matrices()
         self._max_cones = self._get_max_cones()
         self._compute_offsets()
-        # self._qps, self._R, self._S = self._compute_piecewise()
-        # self._str_var = [str(x) for x in self._R.gens()]        
+        self._qps, self._R = self._compute_piecewise()
+        self._str_var = [str(x) for x in self._R.gens()]        
 
     def _secondary_fan(self):
         """
@@ -53,10 +53,6 @@ class PiecewiseEhrhartQuasiPolynomial():
 
         R = PolynomialRing(QQ, "x", num_variables)
         x_vars = R.gens()
-        
-        # TODO: remove t
-        S = PolynomialRing(R, "t")
-        t = S.gen()
 
         quasi_polynomials = []
         for idx, cone in enumerate(self._max_cones):
@@ -79,12 +75,12 @@ class PiecewiseEhrhartQuasiPolynomial():
                 cone_poly = 0
                 for degree, terms in term_dict.items():
                     interpolated = R.interpolation(expected_degree, cone_points, terms)
-                    cone_poly += interpolated(*self._projection(x_vars))*t**degree
+                    cone_poly += interpolated(*self._projection(x_vars))
                 cone_dict[tuple(off_set)] = cone_poly
 
             quasi_polynomials.append(cone_dict)
 
-        return quasi_polynomials, R, S
+        return quasi_polynomials, R
 
     def _estimate_period(self, cone):
         # TODO: find better estimate for each cone
@@ -178,6 +174,7 @@ class PiecewiseEhrhartQuasiPolynomial():
         lin_vectors = []
         for vec in self._sec_fan.fan_dict["LINEALITY_SPACE"]:
             lin_vectors.append(free_module_element([int(val) for val in vec.split(" ")]))
+        self._lin_vectors = lin_vectors
 
         self.change_of_basis_matrix = create_matrix(orth_vectors + lin_vectors)
         self.change_of_basis_inverse = self.change_of_basis_matrix.inverse()

@@ -22,6 +22,7 @@ class PiecewiseEhrhartQuasiPolynomial():
         self._sec_fan = self._secondary_fan()
         self._amb_dim = self._sec_fan.ambient_dim()
         self._origin = free_module_element([0]*self._amb_dim)
+        self._scaled_rays = self._get_scaled_rays(self._sec_fan.rays())
 
         self._compute_change_of_basis_matrices()
         self._max_cones = self._get_max_cones()
@@ -63,7 +64,8 @@ class PiecewiseEhrhartQuasiPolynomial():
 
             needed_points = factorial(actual_num_variables + max_degree)//(
                 factorial(actual_num_variables)*factorial(max_degree) )
-            cone_points = self._generate_cone_points(cone_rays, needed_points)
+
+            cone_points = self._generate_cone_points(self._scaled_rays, needed_points)
 
             expected_degree = [max_degree if dim not in dimensions_removed else 0
                                for dim in range(self._amb_dim)]
@@ -87,17 +89,18 @@ class PiecewiseEhrhartQuasiPolynomial():
         # since if the polytope is empty in a cone we could skip all calculations
         return lcm(a for a in self._A.list() if a)
 
+    def _compute_scaled_rays(self, rays):
+        scaled_rays = []
+        for ray in rays:
+            den = get_period(self._create_polytope_from_matrix(ray).Vrepresentation())
+            scaled_rays.append(den*ray)
+        return scaled_rays
+
     def _compute_offsets(self):
-        self._scaled_rays = []
         self._off_sets = []
         for cone in self._max_cones:
-            scaled_rays = []
-            for ray in cone.rays():
-                den = get_period(self._create_polytope_from_matrix(ray).Vrepresentation())
-                scaled_rays.append(den*ray)
-            self._scaled_rays.append(scaled_rays)
-
-            vertices = scaled_rays[:]
+            scaled_rays = self._scaled_rays
+            vertices = self._scaled_rays[:]
             for dim in range(2, len(scaled_rays)+1):
                 combis = combinations(scaled_rays, dim)
                 vertices += [sum(combi, self._origin) for combi in combis]
@@ -128,13 +131,13 @@ class PiecewiseEhrhartQuasiPolynomial():
                               if dim not in zero_dimensions] for ray in rays])
         return reduced_cone, zero_dimensions
 
-    def _generate_cone_points(self, cone_rays, number):
+    def _generate_cone_points(self, scaled_cone_rays, number):
         points = []
         points_len = 0
         index = 1
         while points_len <= number:
             new_points = [sum(combi) for combi
-                          in combinations_with_replacement(cone_rays, index)]
+                          in combinations_with_replacement(scaled_cone_rays, index)]
             points += new_points
             index += 1
             points_len += len(new_points)
@@ -187,7 +190,10 @@ class PiecewiseEhrhartQuasiPolynomial():
         eval_point = sum(new_representation[k]*o_vec for k, o_vec in enumerate(self._orth_vectors))
         return eval_point
 
+    # TODO: make this work using the lattice
     def _find_offset(self, point, cone_idx):
+        return self._origin
+
         projected = self._projected_coordinates(point)
         off_set = sum( (projected[k] - int(projected[k]))*o_vec
                       for k, o_vec in enumerate(self._scaled_rays[cone_idx]))

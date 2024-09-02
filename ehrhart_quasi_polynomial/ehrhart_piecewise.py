@@ -10,6 +10,8 @@ from sage.geometry.polyhedron.constructor import Polyhedron
 from sage.interfaces.gfan import gfan
 from sage.matrix.constructor import Matrix as create_matrix
 from sage.modules.free_module_element import free_module_element
+from sage.modules.free_quadratic_module_integer_symmetric import IntegralLattice
+from sage.rings.integer_ring import ZZ
 from sage.rings.polynomial.groebner_fan import PolyhedralFan
 from sage.rings.polynomial.polynomial_ring_constructor import PolynomialRing
 from sage.rings.rational_field import QQ
@@ -20,15 +22,18 @@ class PiecewiseEhrhartQuasiPolynomial():
     def __init__(self, A):
         self._A = A
         self._sec_fan = self._secondary_fan()
+
         self._amb_dim = self._sec_fan.ambient_dim()
         self._origin = free_module_element([0]*self._amb_dim)
-        self._scaled_rays = self._get_scaled_rays(self._sec_fan.rays())
+        self._amb_lattice = IntegralLattice(create_matrix(ZZ, self._amb_dim,
+                                                          lambda x, y: int(x == y)))
 
         self._compute_change_of_basis_matrices()
-        self._max_cones = self._get_max_cones()
-        self._compute_offsets()
-        self._qps, self._R = self._compute_piecewise()
-        self._str_var = [str(x) for x in self._R.gens()]        
+
+        self._cone_dicts = self._get_cone_dicts(self._sec_fan)
+
+        # self._qps, self._R = self._compute_piecewise()
+        # self._str_var = [str(x) for x in self._R.gens()]
 
     def _secondary_fan(self):
         """
@@ -39,14 +44,47 @@ class PiecewiseEhrhartQuasiPolynomial():
         gfan_input = "{" + ", ".join(str(row) for row in self._A.rows()) + "}"
         return PolyhedralFan(gfan(gfan_input, "secondaryfan"))
 
-    def _get_max_cones(self):
-        fan_rays = self._sec_fan.rays()
-        max_cones = []
+    def _compute_change_of_basis_matrices(self):
+        orth_vectors = []
+        for vec in self._sec_fan.fan_dict["ORTH_LINEALITY_SPACE"]:
+            orth_vectors.append(free_module_element([int(val) for val in vec.split(" ")]))
+        self._orth_vectors = orth_vectors
+        self._orth_dim = len(orth_vectors)
+
+        lin_vectors = []
+        for vec in self._sec_fan.fan_dict["LINEALITY_SPACE"]:
+            lin_vectors.append(free_module_element([int(val) for val in vec.split(" ")]))
+        self._lin_vectors = lin_vectors
+
+        self.change_of_basis_matrix = create_matrix(orth_vectors + lin_vectors)
+        self.change_of_basis_inverse = self.change_of_basis_matrix.inverse()
+
+    def _get_cone_dicts(self, sec_fan):
+        fan_rays = [free_module_element(ray) for ray in self._sec_fan.rays()]
+        ray_scalars = self._compute_ray_scalars(fan_rays)
+
+        dictionaries = []
         for ray_lists in self._sec_fan.maximal_cones().values():
             for ray_list in ray_lists:
-                cone = Cone(fan_rays[idx] for idx in ray_list)
-                max_cones.append(cone)
-        return max_cones
+                cone_dic = {}
+                cone_dic["rays"] = [fan_rays[idx]
+                               for idx in ray_list]
+                cone_dic["scaled_rays"] = [ray_scalars[idx]*fan_rays[idx]
+                                      for idx in ray_list]
+                lattice_basis = cone_dic["scaled_rays"] + self._lin_vectors
+                cone_dic["lattice"] = self._amb_lattice.sublattice(lattice_basis)
+                cone_dic["quotient"] = self._amb_lattice.quotient(cone_dic["lattice"])
+
+                cone_dic["cone"] = Cone(cone_dic["rays"])
+                dictionaries.append(cone_dic)
+        return dictionaries
+
+    def _compute_ray_scalars(self, rays):
+        ray_scalars = []
+        for ray in rays:
+            den = get_period(self._create_polytope_from_matrix(ray).Vrepresentation())
+            ray_scalars.append(den)
+        return ray_scalars
 
     def _compute_piecewise(self):
         num_variables = self._A.nrows()
@@ -84,20 +122,19 @@ class PiecewiseEhrhartQuasiPolynomial():
 
         return quasi_polynomials, R
 
-    def _estimate_period(self, cone):
+    def _estimate_periodicity(self, cone):
         # TODO: find better estimate for each cone
         # since if the polytope is empty in a cone we could skip all calculations
         return lcm(a for a in self._A.list() if a)
 
-    def _compute_scaled_rays(self, rays):
-        scaled_rays = []
-        for ray in rays:
-            den = get_period(self._create_polytope_from_matrix(ray).Vrepresentation())
-            scaled_rays.append(den*ray)
-        return scaled_rays
-
-    def _compute_offsets(self):
+    def _compute_offsets_and_lattices(self):
+        self._lattices = []
         self._off_sets = []
+        for cone in self._max_cones:
+            self._lattices.append(self._int_lattice.sublattice())
+
+        return
+
         for cone in self._max_cones:
             scaled_rays = self._scaled_rays
             vertices = self._scaled_rays[:]
@@ -167,21 +204,6 @@ class PiecewiseEhrhartQuasiPolynomial():
         return [poly.coefficients()[order].constants()[0]
                 if poly.degree() >= order else 0 for poly in polynomials]
 
-    def _compute_change_of_basis_matrices(self):
-        orth_vectors = []
-        for vec in self._sec_fan.fan_dict["ORTH_LINEALITY_SPACE"]:
-            orth_vectors.append(free_module_element([int(val) for val in vec.split(" ")]))
-        self._orth_vectors = orth_vectors
-        self._orth_dim = len(orth_vectors)
-
-        lin_vectors = []
-        for vec in self._sec_fan.fan_dict["LINEALITY_SPACE"]:
-            lin_vectors.append(free_module_element([int(val) for val in vec.split(" ")]))
-        self._lin_vectors = lin_vectors
-
-        self.change_of_basis_matrix = create_matrix(orth_vectors + lin_vectors)
-        self.change_of_basis_inverse = self.change_of_basis_matrix.inverse()
-
     def _projected_coordinates(self, point):
         return free_module_element(point)*self.change_of_basis_inverse
 
@@ -190,7 +212,7 @@ class PiecewiseEhrhartQuasiPolynomial():
         eval_point = sum(new_representation[k]*o_vec for k, o_vec in enumerate(self._orth_vectors))
         return eval_point
 
-    # TODO: make this work using the lattice
+    # TODO: make this work using the lattices
     def _find_offset(self, point, cone_idx):
         return self._origin
 

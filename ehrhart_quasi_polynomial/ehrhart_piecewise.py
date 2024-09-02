@@ -1,11 +1,10 @@
 from itertools import combinations, combinations_with_replacement
 
-# from .quasipolynomial import QuasiPolynomialRing, construct_quasipolynomial
 from .ehrhart_quasi_polynomial import (ehrhart_quasi_polynomial,
                                        get_period, get_gcd)
 
 from sage.arith.functions import lcm
-from sage.functions.other import factorial
+from sage.functions.other import factorial, floor
 from sage.geometry.cone import Cone
 from sage.geometry.polyhedron.constructor import Polyhedron
 from sage.interfaces.gfan import gfan
@@ -24,9 +23,11 @@ class PiecewiseEhrhartQuasiPolynomial():
         self._amb_dim = self._sec_fan.ambient_dim()
         self._origin = free_module_element([0]*self._amb_dim)
 
-        self._projection_generator()
-        self._max_cones, self._qps, self._R, self._S = self._compute_piecewise()
-        self._str_var = [str(x) for x in self._R.gens()]        
+        self._compute_change_of_basis_matrices()
+        self._max_cones = self._get_max_cones()
+        self._compute_offsets()
+        # self._qps, self._R, self._S = self._compute_piecewise()
+        # self._str_var = [str(x) for x in self._R.gens()]        
 
     def _secondary_fan(self):
         """
@@ -37,60 +38,82 @@ class PiecewiseEhrhartQuasiPolynomial():
         gfan_input = "{" + ", ".join(str(row) for row in self._A.rows()) + "}"
         return PolyhedralFan(gfan(gfan_input, "secondaryfan"))
 
+    def _get_max_cones(self):
+        fan_rays = self._sec_fan.rays()
+        max_cones = []
+        for ray_lists in self._sec_fan.maximal_cones().values():
+            for ray_list in ray_lists:
+                cone = Cone(fan_rays[idx] for idx in ray_list)
+                max_cones.append(cone)
+        return max_cones
+
     def _compute_piecewise(self):
         num_variables = self._A.nrows()
         max_degree = self._sec_fan.lineality_dim()
 
         R = PolynomialRing(QQ, "x", num_variables)
         x_vars = R.gens()
+        
+        # TODO: remove t
         S = PolynomialRing(R, "t")
         t = S.gen()
 
-        fan_rays = self._sec_fan.rays()
-        self._off_set_points = []
-
-        max_cones = []
         quasi_polynomials = []
-        for ray_lists in self._sec_fan.maximal_cones().values():
-            for ray_list in ray_lists:
-                cone = Cone([fan_rays[idx] for idx in ray_list])
-                max_cones.append(cone)
+        for idx, cone in enumerate(self._max_cones):
+            cone_rays = cone.rays()
 
-                red_cone, dimensions_removed = self._remove_zero_dimensions(cone.rays())
-                actual_num_variables = num_variables - len(dimensions_removed)
+            red_cone, dimensions_removed = self._remove_zero_dimensions(cone_rays)
+            actual_num_variables = num_variables - len(dimensions_removed)
 
-                needed_points = factorial(actual_num_variables + max_degree)//(
-                    factorial(actual_num_variables)*factorial(max_degree) )
-                cone_points = self._generate_cone_points(cone.rays(), needed_points)
+            needed_points = factorial(actual_num_variables + max_degree)//(
+                factorial(actual_num_variables)*factorial(max_degree) )
+            cone_points = self._generate_cone_points(cone_rays, needed_points)
 
-                interpolation_variables = [x for dim, x in enumerate(x_vars)
-                                           if dim not in dimensions_removed]
-                T = PolynomialRing(QQ, names=interpolation_variables)
-                cone_points = [[p for dim, p in enumerate(point)
-                                if dim not in dimensions_removed]
-                               for point in cone_points]
+            expected_degree = [max_degree if dim not in dimensions_removed else 0
+                               for dim in range(self._amb_dim)]
 
+            cone_dict = {}
+            for off_set in self._off_sets[idx]:
+                off_cone_points = [p + off_set for p in cone_points]
+                term_dict = self._get_term_dict(self._A, off_cone_points)
                 cone_poly = 0
-                term_dict = self._get_term_dict(self._A, cone_points)
                 for degree, terms in term_dict.items():
-                    interpolate = T.interpolation(degree, cone_points, terms)
-                    cone_poly += interpolate(*self.projection(T.gens()))*t**degree
+                    interpolated = R.interpolation(expected_degree, cone_points, terms)
+                    cone_poly += interpolated(*self._projection(x_vars))*t**degree
+                cone_dict[tuple(off_set)] = cone_poly
 
-                quasi_polynomials.append(cone_poly)
-        return max_cones, quasi_polynomials, R, S
+            quasi_polynomials.append(cone_dict)
 
-    def _get_offset_points(self, cone_rays):
-        fundamental_region = self._fundamental_region(cone_rays)
-        integral_points = fundamental_region.integral_points()
-        return [free_module_element(point) for point in integral_points]
+        return quasi_polynomials, R, S
 
-    def _fundamental_region(self, cone_rays):
-        origin = self._origin
-        vertices = [origin] + list(cone_rays)
-        for dim in range(2, len(cone_rays)+1):
-            combis = combinations(cone_rays, dim)
-            vertices += [sum(combi, self._origin) for combi in combis]
-        return Polyhedron(vertices)
+    def _estimate_period(self, cone):
+        # TODO: find better estimate for each cone
+        # since if the polytope is empty in a cone we could skip all calculations
+        return lcm(a for a in self._A.list() if a)
+
+    def _compute_offsets(self):
+        self._scaled_rays = []
+        self._off_sets = []
+        for cone in self._max_cones:
+            scaled_rays = []
+            for ray in cone.rays():
+                den = get_period(self._create_polytope_from_matrix(ray).Vrepresentation())
+                scaled_rays.append(den*ray)
+            self._scaled_rays.append(scaled_rays)
+
+            vertices = scaled_rays[:]
+            for dim in range(2, len(scaled_rays)+1):
+                combis = combinations(scaled_rays, dim)
+                vertices += [sum(combi, self._origin) for combi in combis]
+
+            polytope = Polyhedron([self._origin] + vertices)
+
+            integral_points = polytope.integral_points()
+            without_vertices = [p for p in integral_points if p not in vertices]
+            off_set_points = [point for point in without_vertices
+                              if not any(point - ray in integral_points
+                                         for ray in scaled_rays)]
+            self._off_sets.append(off_set_points)
 
     def _rat_period(self, ray):
         original_polytope = self._create_polytope_from_matrix(ray)
@@ -145,25 +168,33 @@ class PiecewiseEhrhartQuasiPolynomial():
         return [poly.coefficients()[order].constants()[0]
                 if poly.degree() >= order else 0 for poly in polynomials]
 
-    def _projection_generator(self):
+    def _compute_change_of_basis_matrices(self):
         orth_vectors = []
         for vec in self._sec_fan.fan_dict["ORTH_LINEALITY_SPACE"]:
             orth_vectors.append(free_module_element([int(val) for val in vec.split(" ")]))
+        self._orth_vectors = orth_vectors
+        self._orth_dim = len(orth_vectors)
 
         lin_vectors = []
         for vec in self._sec_fan.fan_dict["LINEALITY_SPACE"]:
             lin_vectors.append(free_module_element([int(val) for val in vec.split(" ")]))
 
         self.change_of_basis_matrix = create_matrix(orth_vectors + lin_vectors)
-        inverse = self.change_of_basis_matrix.inverse()
+        self.change_of_basis_inverse = self.change_of_basis_matrix.inverse()
 
-        def projection(point):
-            new_representation = free_module_element(point)*inverse
-            eval_point = sum(new_representation[k]*o_vec for k, o_vec in enumerate(orth_vectors))
-            return eval_point
+    def _projected_coordinates(self, point):
+        return free_module_element(point)*self.change_of_basis_inverse
 
-        self.projection = projection
+    def _projection(self, point):
+        new_representation = self._projected_coordinates(point)
+        eval_point = sum(new_representation[k]*o_vec for k, o_vec in enumerate(self._orth_vectors))
+        return eval_point
 
+    def _find_offset(self, point, cone_idx):
+        projected = self._projected_coordinates(point)
+        off_set = sum( (projected[k] - int(projected[k]))*o_vec
+                      for k, o_vec in enumerate(self._scaled_rays[cone_idx]))
+        return tuple(int(val) for val in off_set)
 
     def __call__(self, point):
         return self.evaluate(point)
@@ -173,11 +204,13 @@ class PiecewiseEhrhartQuasiPolynomial():
             raise ValueError("Dimension of ``point`` needs to be equal to the ambient"
                              f" dimension of ``self`` which is {self._amb_dim}")
 
-        proj = self.projection(point)
+        proj = self._projection(point)
         for idx, cone in enumerate(self._max_cones):
             if proj in cone:
                 keywords = {x: point[k] for k, x in enumerate(self._str_var)}
-                return self._qps[idx](**keywords)
+
+                off_set = self._find_offset(point, idx)
+                return self._qps[idx][off_set](**keywords)
         return 0
 
     def __repr__(self):

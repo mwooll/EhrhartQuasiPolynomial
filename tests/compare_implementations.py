@@ -1,15 +1,9 @@
 from ehrhart_quasi_polynomial import ehrhart_quasi_polynomial
 
-import sage.all
-from sage.rings.rational_field import QQ
-from sage.rings.polynomial.polynomial_ring_constructor import PolynomialRing
 from sage.geometry.polyhedron.constructor import Polyhedron
 
 from unittest import TestCase, main
 
-
-R = PolynomialRing(QQ, "x")
-x = R.gen()
 
 def simplex(dim):
     vertices = [[0 for k in range(dim)] for v in range(dim+1)]

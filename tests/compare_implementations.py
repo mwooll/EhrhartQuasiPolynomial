@@ -1,4 +1,4 @@
-from ehrhart_polynomial import ehrhart_polynomial
+from ehrhart_quasi_polynomial import ehrhart_quasi_polynomial
 
 import sage.all
 from sage.rings.rational_field import QQ
@@ -19,11 +19,9 @@ def simplex(dim):
 
 class Comparer(TestCase):
     def compare(self, vertices):
-        own = ehrhart_polynomial(vertices, False)
-        simplified = ehrhart_polynomial(vertices, True)
+        own = ehrhart_quasi_polynomial(vertices)
         latte = Polyhedron(vertices).ehrhart_polynomial(variable="x")
         self.assertEqual(own, latte)
-        self.assertEqual(simplified, latte)
 
     # latte fails for polytopes with only 1 vertex
     # though the ehrhart_polynomial is just 1 anyway (if the vertex is integral)

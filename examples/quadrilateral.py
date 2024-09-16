@@ -4,7 +4,6 @@ import sage.all
 from sage.rings.rational_field import QQ
 from sage.rings.polynomial.polynomial_ring_constructor import PolynomialRing
 from sage.geometry.polyhedron.constructor import Polyhedron
-from sage.matrix.constructor import Matrix
 
 from unittest import TestCase, main
 
@@ -29,7 +28,7 @@ def quadrilateral_formula(m, n):
     if m <= n:
         return 1 + 3*m/2*k + m**2*k**2/2
     if m > n:
-        return 1 + (1.0*m + 0.5*n)*k + (1.0*m*n - 0.5*n**2)*k**2
+        return 1 + (m + n/2)*k + (m*n - n**2/2)*k**2
 
 
 class TestQuadrilateral(TestCase):

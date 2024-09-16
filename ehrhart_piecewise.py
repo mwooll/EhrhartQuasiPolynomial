@@ -24,6 +24,7 @@ class PiecewiseEhrhartQuasiPolynomial():
         self._sec_fan = self._secondary_fan()
 
         self._amb_dim = self._sec_fan.ambient_dim()
+        self._orth_dim = self._amb_dim - self._sec_fan.lineality_dim()
         self._origin = free_module_element([0]*self._amb_dim)
         self._amb_lattice = IntegralLattice(create_matrix(ZZ, self._amb_dim,
                                                           lambda x, y: int(x == y)))
@@ -52,6 +53,7 @@ class PiecewiseEhrhartQuasiPolynomial():
         for vec in self._sec_fan.fan_dict["LINEALITY_SPACE"]:
             lin_vectors.append(free_module_element([int(val) for val in vec.split(" ")]))
         self._lin_vectors = lin_vectors
+        self._lin_lattice = self._amb_lattice.sublattice(self._lin_vectors)
 
         self.change_of_basis_matrix = create_matrix(orth_vectors + lin_vectors)
         self.change_of_basis_inverse = self.change_of_basis_matrix.inverse()
@@ -64,14 +66,15 @@ class PiecewiseEhrhartQuasiPolynomial():
         for ray_lists in self._sec_fan.maximal_cones().values():
             for ray_list in ray_lists:
                 cone_dic = {}
-                cone_dic["cone"] = Cone([fan_rays[idx] for idx in ray_list])
+                cone_dic["rays"] = [fan_rays[idx] for idx in ray_list]
                 cone_dic["scaled_rays"] = [ray_scalars[idx]*fan_rays[idx]
                                            for idx in ray_list]
 
                 lattice_basis = cone_dic["scaled_rays"] + self._lin_vectors
-                sub_lattice = self._amb_lattice.sublattice(lattice_basis)
-                cone_dic["quotient"] = self._amb_lattice.quotient(sub_lattice)
+                cone_dic["lattice"] = self._amb_lattice.sublattice(lattice_basis)
+                cone_dic["quotient"] = self._amb_lattice.quotient(cone_dic["lattice"])
 
+                cone_dic["cone"] = Cone(cone_dic["rays"])
                 dictionaries.append(cone_dic)
         return dictionaries
 
@@ -83,11 +86,11 @@ class PiecewiseEhrhartQuasiPolynomial():
         return ray_scalars
 
     def _compute_piecewise(self):
-        num_variables = self._amb_dim
-        max_degree = self._amb_dim - self._sec_fan.lineality_dim()
+        num_variables = self._amb_dim - self._sec_fan.lineality_dim()
+        max_degree = num_variables
 
         R = PolynomialRing(QQ, "x", num_variables)
-        self.x_vars = R.gens()
+        x_vars = R.gens()
 
         for idx, cone_dict in enumerate(self._cone_dicts):
             scaled_rays = cone_dict["scaled_rays"]
@@ -95,22 +98,24 @@ class PiecewiseEhrhartQuasiPolynomial():
             needed_points = factorial(num_variables + max_degree)//(
                 factorial(num_variables)*factorial(max_degree) )
 
-            cone_points = self._generate_cone_points(scaled_rays + self._lin_vectors,
-                                                     needed_points)
+            lattice_basis = [free_module_element(int(k==dim)*invar for k in range(num_variables))
+                             for dim, invar in enumerate(cone_dict["quotient"].invariants())]
+            lattice_points = self._generate_lattice_points(lattice_basis, needed_points)
 
             polynomials = {}
             for off_set in cone_dict["quotient"]:
-                lifted = off_set.lift()
-                off_cone_points = [p + lifted for p in cone_points]
+                off_set = tuple(off_set)
+                off_cone_points = [p + free_module_element(off_set) for p in lattice_points]
 
                 num_integral_points = []
                 for point in off_cone_points:
-                    polytope = self._create_polytope_from_matrix(point)
+                    lifted = sum(p*scaled_rays[idx] for idx, p in enumerate(point))
+                    polytope = self._create_polytope_from_matrix(lifted)
                     num_integral_points.append(len(polytope.integral_points()))
                     
                 interpolated = R.interpolation(max_degree, off_cone_points,
                                                num_integral_points)
-                polynomials[off_set] = interpolated#(*self._projection(self.x_vars))
+                polynomials[off_set] = interpolated#(*self._projection(x_vars))
             self._cone_dicts[idx]["polynomials"] = polynomials
 
     def _rat_period(self, ray):
@@ -132,6 +137,19 @@ class PiecewiseEhrhartQuasiPolynomial():
             points_len += len(new_points)
         return points[:number]
 
+    def _generate_lattice_points(self, basis_vecs, number):
+        sub_points = []
+        points_len = 0
+        index = 1
+        while points_len <= number:
+            new_points = [sum(combi) for combi
+                          in combinations_with_replacement(basis_vecs, index)]
+            sub_points += new_points
+            index += 1
+            points_len += len(new_points)
+        return sub_points[:number]
+
+
     def _create_polytope_from_matrix(self, b):
         """
         Unsafe version of ``create_polytope_from_matrix``
@@ -140,8 +158,11 @@ class PiecewiseEhrhartQuasiPolynomial():
         inequalities = [[b[k]] + list(-self._A.rows()[k]) for k in range(self._A.nrows())]
         return Polyhedron(ieqs = inequalities)
 
+    def _projected_coordinates(self, point):
+        return (free_module_element(point)*self.change_of_basis_inverse)[:self._orth_dim]
+
     def _projection(self, point):
-        new_representation = free_module_element(point)*self.change_of_basis_inverse
+        new_representation = self._projected_coordinates(point)
         eval_point = sum(new_representation[k]*o_vec
                           for k, o_vec in enumerate(self._orth_vectors))
         return eval_point
@@ -157,8 +178,8 @@ class PiecewiseEhrhartQuasiPolynomial():
         proj = self._projection(point)
         for cone_dict in self._cone_dicts:
             if proj in cone_dict["cone"]:
-                off_set = cone_dict["quotient"](point)
-                return cone_dict["polynomials"][off_set](tuple(proj))
+                off_set = tuple(cone_dict["quotient"](point))
+                return cone_dict["polynomials"][off_set](tuple(self._projected_coordinates(point)))
         return 0
 
     def investigate(self, point):
@@ -169,11 +190,10 @@ class PiecewiseEhrhartQuasiPolynomial():
         proj = self._projection(point)
         for k, cone_dict in enumerate(self._cone_dicts):
             if proj in cone_dict["cone"]:
-                off_set = cone_dict["quotient"](point)
-                return (k, off_set, cone_dict["polynomials"][off_set],
-                        cone_dict["polynomials"][off_set](point) )
+                off_set = tuple(cone_dict["quotient"](point))
+                return (k, proj, off_set, cone_dict["polynomials"][off_set],
+                        cone_dict["polynomials"][off_set](tuple(self._projected_coordinates(point))))
         return 0
-
 
 
     def __repr__(self):

@@ -168,7 +168,7 @@ class IntegerPeriodicFunctionElement(RingElement):
     def _repr_(self):
         return f"IntegerPeriodicFunctionElement({self.parent()}, {self._constants})"
 
-    def _str_(self):
+    def __str__(self):
         function_str = f"IntegerPeriodicFunction over {self.parent().base_ring()} given by"
         for ind, val in enumerate(self._constants):
             function_str += f"\n\t{val} if k%{self._period} == {ind}"

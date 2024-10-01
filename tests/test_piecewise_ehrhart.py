@@ -10,12 +10,10 @@ if __name__ == "__main__":
     ehr = lambda b: ehrhart_quasi_polynomial(create_polytope_from_matrix(A, b).Vrepresentation())(1)
 
     peqp = PiecewiseEhrhartQuasiPolynomial(A)
-    
+
     # print(peqp._sec_fan.fan_dict)
     # print()
-    # print(peqp._cone_dicts)
-    
-    
+    # print(peqp._cone_dicts[0])
 
     for p in combinations_with_replacement(range(-5, 4), 4):
         expected = ehr(p)

@@ -93,24 +93,23 @@ class PiecewiseEhrhartQuasiPolynomial():
         R = PolynomialRing(QQ, "x", num_variables)
 
         for idx, cone_dict in enumerate(self._cone_dicts):
-            scaled_rays = cone_dict["scaled_rays"]
-
-            cone_points = self._generate_cone_points(scaled_rays + self._scaled_lin_vectors,
+            cone_points = self._generate_cone_points(cone_dict["scaled_rays"] + self._scaled_lin_vectors,
                                                      needed_points)
 
             polynomials = {}
-            for off_set in cone_dict["quotient"]:
-                lifted = off_set.lift()
-                off_cone_points = [p + lifted for p in cone_points]
+            for unlifted in cone_dict["quotient"]:
+                lifted = unlifted.lift()
+                starting_point = self._find_starting_point(lifted, cone_dict["cone"], cone_dict["scaled_rays"][0])
+                off_cone_points = [p + starting_point for p in cone_points]
 
                 num_integral_points = []
                 for point in off_cone_points:
                     polytope = self._create_polytope_from_matrix(point)
                     num_integral_points.append(len(polytope.integral_points()))
-                    
+
                 interpolated = R.interpolation(max_degree, off_cone_points,
                                                num_integral_points)
-                polynomials[off_set] = interpolated
+                polynomials[unlifted] = interpolated
             self._cone_dicts[idx]["polynomials"] = polynomials
 
     def _generate_cone_points(self, scaled_cone_rays, number):
@@ -124,6 +123,11 @@ class PiecewiseEhrhartQuasiPolynomial():
             index += 1
             points_len += len(new_points)
         return points[:number]
+
+    def _find_starting_point(self, off_set, cone, ray):
+        while self._projection(off_set) not in cone:
+            off_set += ray
+        return off_set
 
     def _create_polytope_from_matrix(self, b):
         """

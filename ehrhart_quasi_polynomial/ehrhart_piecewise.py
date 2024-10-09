@@ -2,7 +2,7 @@ from itertools import combinations_with_replacement
 
 from .ehrhart_quasi_polynomial import get_period, get_gcd
 
-from sage.functions.other import factorial
+from sage.functions.other import ceil, factorial
 from sage.geometry.cone import Cone
 from sage.geometry.polyhedron.constructor import Polyhedron
 from sage.interfaces.gfan import gfan
@@ -28,6 +28,7 @@ class PiecewiseEhrhartQuasiPolynomial():
 
         self._compute_change_of_basis_matrices()
         self._cone_dicts = self._get_cone_dicts()
+        print(self._cone_dicts)
         self._compute_piecewise()
 
     def _secondary_fan(self):
@@ -50,15 +51,13 @@ class PiecewiseEhrhartQuasiPolynomial():
         for vec in self._sec_fan.fan_dict["LINEALITY_SPACE"]:
             lin_vectors.append(free_module_element([int(val) for val in vec.split(" ")]))
         self._lin_vectors = lin_vectors
-        self._scaled_lin_vectors = [lin_vectors[k]*scalar for k, scalar in
-                                    enumerate(self._compute_ray_scalars(lin_vectors))]
 
         self.change_of_basis_matrix = create_matrix(orth_vectors + lin_vectors)
         self.change_of_basis_inverse = self.change_of_basis_matrix.inverse()
 
     def _get_cone_dicts(self):
         fan_rays = [free_module_element(ray) for ray in self._sec_fan.rays()]
-        self._ray_scalars = self._compute_ray_scalars(fan_rays)
+        ray_scalars = self._compute_ray_scalars(fan_rays)
 
         dictionaries = []
         for ray_lists in self._sec_fan.maximal_cones().values():
@@ -66,11 +65,10 @@ class PiecewiseEhrhartQuasiPolynomial():
                 cone_dic = {}
                 cone_dic["rays"] = [fan_rays[idx] for idx in ray_list]
                 cone_dic["cone"] = Cone([fan_rays[idx] for idx in ray_list])
-                cone_dic["scalars"] = [self._ray_scalars[idx] for idx in ray_list]
-                cone_dic["scaled_rays"] = [self._ray_scalars[idx]*fan_rays[idx]
+                cone_dic["scaled_rays"] = [ray_scalars[idx]*fan_rays[idx]
                                            for idx in ray_list]
 
-                lattice_basis = cone_dic["scaled_rays"] + self._scaled_lin_vectors
+                lattice_basis = cone_dic["scaled_rays"] + self._lin_vectors
                 sub_lattice = self._amb_lattice.sublattice(lattice_basis)
                 cone_dic["quotient"] = self._amb_lattice.quotient(sub_lattice)
 
@@ -93,13 +91,22 @@ class PiecewiseEhrhartQuasiPolynomial():
         R = PolynomialRing(QQ, "x", num_variables)
 
         for idx, cone_dict in enumerate(self._cone_dicts):
-            cone_points = self._generate_cone_points(cone_dict["scaled_rays"] + self._scaled_lin_vectors,
-                                                     needed_points)
+            scaled_rays = cone_dict["scaled_rays"] + self._lin_vectors
+            cone_points = self._generate_cone_points(scaled_rays, needed_points)
+
+            ray_sum = free_module_element(sum(scaled_rays))
+            proj_sum = self._projection(ray_sum)
+            non_zero_indexes = [k for k, val in enumerate(proj_sum) if val != 0]
 
             polynomials = {}
+            cone = cone_dict["cone"]
             for unlifted in cone_dict["quotient"]:
                 lifted = unlifted.lift()
-                starting_point = self._find_starting_point(lifted, cone_dict["cone"], cone_dict["scaled_rays"][0])
+                print(lifted)
+
+                disp_fac = self._displacement_factor(lifted, cone, proj_sum, non_zero_indexes)
+                starting_point = lifted + disp_fac*ray_sum
+                print(self._projection(starting_point) in cone)
                 off_cone_points = [p + starting_point for p in cone_points]
 
                 num_integral_points = []
@@ -124,10 +131,10 @@ class PiecewiseEhrhartQuasiPolynomial():
             points_len += len(new_points)
         return points[:number]
 
-    def _find_starting_point(self, off_set, cone, ray):
-        while self._projection(off_set) not in cone:
-            off_set += ray
-        return off_set
+    def _displacement_factor(self, lifted_off_set, cone, proj_sum, non_zero_indexes):
+        proj_off = self._projection(lifted_off_set)
+        disp_fac = ceil( -min( proj_off[k]/proj_sum[k] for k in non_zero_indexes) ) + 3
+        return disp_fac
 
     def _create_polytope_from_matrix(self, b):
         """

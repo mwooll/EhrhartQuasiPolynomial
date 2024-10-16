@@ -1,6 +1,6 @@
 from itertools import combinations_with_replacement
 
-from .ehrhart_quasi_polynomial import get_period, get_gcd
+from .ehrhart_quasi_polynomial import get_period
 
 from sage.functions.other import ceil, factorial
 from sage.geometry.cone import Cone
@@ -19,68 +19,48 @@ from sage.structure.element import Matrix
 class PiecewiseEhrhartQuasiPolynomial():
     def __init__(self, A):
         self._A = A
-        self._sec_fan = self._secondary_fan()
+        self._process_secondary_fan()
 
-        self._amb_dim = self._sec_fan.ambient_dim()
-        self._origin = free_module_element([0]*self._amb_dim)
         self._amb_lattice = IntegralLattice(create_matrix(ZZ, self._amb_dim,
                                                           lambda x, y: int(x == y)))
 
-        self._compute_change_of_basis_matrices()
-        self._cone_dicts = self._get_cone_dicts()
-        print(self._cone_dicts)
-        self._compute_piecewise()
+        # self._cone_dicts = self._generate_cone_dicts()
+        # self._compute_piecewise()
 
-    def _secondary_fan(self):
-        """
-        Returns the secondary fan associated with ``self._A``
-        For details see the documentation of the gfan software package:
-            https://users-math.au.dk/~jensen/software/gfan/gfan.html
-        """
-        gfan_input = "{" + ", ".join(str(row) for row in self._A.rows()) + "}"
-        return PolyhedralFan(gfan(gfan_input, "secondaryfan"))
+    def _process_secondary_fan(self):
+        sec_fan = secondary_fan(self._A)
+        
+        self._amb_dim = sec_fan.ambient_dim()
+        self._rays = [free_module_element(ray) for ray in sec_fan.rays()]
+        self._maximal_cones = sec_fan.maximal_cones()
 
-    def _compute_change_of_basis_matrices(self):
-        orth_vectors = []
-        for vec in self._sec_fan.fan_dict["ORTH_LINEALITY_SPACE"]:
-            orth_vectors.append(free_module_element([int(val) for val in vec.split(" ")]))
-        self._orth_vectors = orth_vectors
-        self._orth_dim = len(orth_vectors)
+        self._orth_vectors = tuple(free_module_element([int(val) for val in vec.split(" ")])
+                              for vec in sec_fan.fan_dict["ORTH_LINEALITY_SPACE"])
+        self._lin_vectors = tuple(free_module_element([int(val) for val in vec.split(" ")])
+                              for vec in sec_fan.fan_dict["LINEALITY_SPACE"])
+        M = _compute_change_of_basis_matrix(self._orth_vectors, self._lin_vectors)
+        self.change_of_basis_matrix = M
+        
 
-        lin_vectors = []
-        for vec in self._sec_fan.fan_dict["LINEALITY_SPACE"]:
-            lin_vectors.append(free_module_element([int(val) for val in vec.split(" ")]))
-        self._lin_vectors = lin_vectors
-
-        self.change_of_basis_matrix = create_matrix(orth_vectors + lin_vectors)
-        self.change_of_basis_inverse = self.change_of_basis_matrix.inverse()
-
-    def _get_cone_dicts(self):
-        fan_rays = [free_module_element(ray) for ray in self._sec_fan.rays()]
-        ray_scalars = self._compute_ray_scalars(fan_rays)
+    def _generate_cone_dicts(self):
+        ray_scalars = _compute_periods(self._A, self._rays)
 
         dictionaries = []
-        for ray_lists in self._sec_fan.maximal_cones().values():
+        for ray_lists in  self._maximal_cones.values():
              for ray_list in ray_lists:
                 cone_dic = {}
-                cone_dic["rays"] = [fan_rays[idx] for idx in ray_list]
-                cone_dic["cone"] = Cone([fan_rays[idx] for idx in ray_list])
-                cone_dic["scaled_rays"] = [ray_scalars[idx]*fan_rays[idx]
+                cone_dic["rays"] = [self._rays[idx] for idx in ray_list]
+                cone_dic["cone"] = Cone(cone_dic["rays"])
+                cone_dic["scaled_rays"] = [ray_scalars[idx]*self._rays[idx]
                                            for idx in ray_list]
 
+                # need to change this:
                 lattice_basis = cone_dic["scaled_rays"] + self._lin_vectors
                 sub_lattice = self._amb_lattice.sublattice(lattice_basis)
                 cone_dic["quotient"] = self._amb_lattice.quotient(sub_lattice)
 
                 dictionaries.append(cone_dic)
         return dictionaries
-
-    def _compute_ray_scalars(self, rays):
-        ray_scalars = []
-        for ray in rays:
-            den = get_period(self._create_polytope_from_matrix(ray).Vrepresentation())
-            ray_scalars.append(den)
-        return ray_scalars
 
     def _compute_piecewise(self):
         num_variables = self._A.nrows() # = self._amb_dim
@@ -99,14 +79,11 @@ class PiecewiseEhrhartQuasiPolynomial():
             non_zero_indexes = [k for k, val in enumerate(proj_sum) if val != 0]
 
             polynomials = {}
-            cone = cone_dict["cone"]
             for unlifted in cone_dict["quotient"]:
                 lifted = unlifted.lift()
-                print(lifted)
-
-                disp_fac = self._displacement_factor(lifted, cone, proj_sum, non_zero_indexes)
+                proj_off = self._projection(lifted)
+                disp_fac = _move_projected_point_inside_cone(proj_off, proj_sum, non_zero_indexes)
                 starting_point = lifted + disp_fac*ray_sum
-                print(self._projection(starting_point) in cone)
                 off_cone_points = [p + starting_point for p in cone_points]
 
                 num_integral_points = []
@@ -119,23 +96,6 @@ class PiecewiseEhrhartQuasiPolynomial():
                 polynomials[unlifted] = interpolated
             self._cone_dicts[idx]["polynomials"] = polynomials
 
-    def _generate_cone_points(self, scaled_cone_rays, number):
-        points = [self._origin]
-        points_len = 0
-        index = 1
-        while points_len <= number:
-            new_points = [sum(combi) for combi
-                          in combinations_with_replacement(scaled_cone_rays, index)]
-            points += new_points
-            index += 1
-            points_len += len(new_points)
-        return points[:number]
-
-    def _displacement_factor(self, lifted_off_set, cone, proj_sum, non_zero_indexes):
-        proj_off = self._projection(lifted_off_set)
-        disp_fac = ceil( -min( proj_off[k]/proj_sum[k] for k in non_zero_indexes) ) + 3
-        return disp_fac
-
     def _create_polytope_from_matrix(self, b):
         """
         Unsafe version of ``create_polytope_from_matrix``
@@ -145,6 +105,10 @@ class PiecewiseEhrhartQuasiPolynomial():
         return Polyhedron(ieqs = inequalities)
 
     def _projection(self, point):
+        # test:
+        #    new_repr = self.change_of_basis_matrix*free_module_element(point)
+        # adjust matrix to have zeros in the roes/columns of the l's
+        # such that for fans with only 1 ray, it is sent to (1,) ...
         new_representation = free_module_element(point)*self.change_of_basis_inverse
         eval_point = sum(new_representation[k]*o_vec
                           for k, o_vec in enumerate(self._orth_vectors))
@@ -165,28 +129,8 @@ class PiecewiseEhrhartQuasiPolynomial():
                 return cone_dict["polynomials"][off_set](point)
         return 0
 
-    def investigate(self, point):
-        if len(point) != self._amb_dim:
-            raise ValueError("Dimension of ``point`` needs to be equal to the ambient"
-                             f" dimension of ``self`` which is {self._amb_dim}.")
-
-        proj = self._projection(point)
-        for k, cone_dict in enumerate(self._cone_dicts):
-            if proj in cone_dict["cone"]:
-                off_set = cone_dict["quotient"](point)
-                return (k, off_set, cone_dict["polynomials"][off_set],
-                        cone_dict["polynomials"][off_set](point) )
-        return 0
-
     def __repr__(self):
         return f"PiecewiseEhrhartQuasiPolynomial({self._A})"
-
-    def matrix(self):
-        return self._A
-
-    def secondary_fan(self):
-        return self._sec_fan
-
 
 
 def create_polytope_from_matrix(A, b):
@@ -197,7 +141,7 @@ def create_polytope_from_matrix(A, b):
 
     EXAMPLES::
 
-        sage: from ehrhart_quasi_polynomial import create_polytope_from_matrix
+        sage: from ehrhart_quasi_polynomial.ehrhart_piecewise import create_polytope_from_matrix
         sage: A = Matrix([[-1, 0], [0, -1], [1, 1]]); b = [0, 0, 1]
         sage: poly = create_polytope_from_matrix(A, b)
         sage: poly
@@ -216,3 +160,106 @@ def create_polytope_from_matrix(A, b):
                          f"A.nrows == len(b), but have {A.nrows()} != {len(b)}")
     inequalities = [[b[k]] + list(-A.rows()[k]) for k in range(A.nrows())]
     return Polyhedron(ieqs = inequalities)
+
+def secondary_fan(A):
+    """
+    Return the secondary fan associated to ``A``
+    For details see the documentation of the gfan software package:
+        https://users-math.au.dk/~jensen/software/gfan/gfan.html
+
+    EXAMPLES:
+
+        sage: from ehrhart_quasi_polynomial.ehrhart_piecewise import secondary_fan
+        sage: A = Matrix([[-1, 0], [0, -1], [1, 1]])
+        sage: fan = secondary_fan(A); fan
+        Polyhedral fan in 3 dimensions of dimension 3
+        sage: fan.ambient_dim(), fan.dim(),
+        (3, 3)
+        sage: fan.rays()
+        [[1, 1, 1]]
+        sage: fan.cones()
+        {3: [[0]]}
+    """
+    gfan_input = "{" + ", ".join(str(row) for row in A.rows()) + "}"
+    return PolyhedralFan(gfan(gfan_input, "secondaryfan"))
+
+def _compute_change_of_basis_matrix(orth_vectors, lineality_vectors):
+    """
+    Return the change of basis matrix from the standard basis to the basis
+    (orth_vectors, lineality_vectors)
+    """
+
+def _compute_periods(A, points):
+    """
+    Return a list of the periods of `P_A(b)` for all `b` in ``points``
+    An error will be raised if some ``b`` is not compatible with ``A``,
+    see ``create_polytope_from_matrix`` for details.
+
+    TESTS::
+        
+        sage: from ehrhart_quasi_polynomial.ehrhart_piecewise import _compute_periods
+        sage: A = Matrix([[-1, 0], [0, -1], [2, 1]])
+        sage: points = [(0, 0, 0), (0, 0, 1), (0, 0, 2)]
+        sage: _compute_periods(A, points)
+        [1, 2, 1]
+    """
+    return [get_period(create_polytope_from_matrix(A, b).Vrepresentation())
+            for b in points]
+
+
+def _generate_cone_points(scaled_cone_rays, number):
+    """
+    Return a list of length ``number`` containing integer combinations of the
+    ``scaled_cone_rays``.
+
+    TESTS::
+
+        sage: from ehrhart_quasi_polynomial.ehrhart_piecewise import _generate_cone_points
+        sage: rays = [free_module_element([1, 0, 0]), free_module_element([0, 1, 1])]
+        sage: _generate_cone_points(rays, 5)
+        [(0, 0, 0), (1, 0, 0), (0, 1, 1), (2, 0, 0), (1, 1, 1)]
+    """
+    origin = scaled_cone_rays[0]*0
+    points = [origin]
+    points_len = 0
+    index = 1
+    while points_len <= number:
+        new_points = [sum(combi) for combi
+                      in combinations_with_replacement(scaled_cone_rays, index)]
+        points += new_points
+        index += 1
+        points_len += len(new_points)
+    return points[:number]
+
+
+### ---------------------------------------------------------------
+#
+# not fully functional
+#
+### ---------------------------------------------------------------
+def _move_projected_point_inside_cone(proj_point, ray_sum, cone):
+    """
+    Return a translation of ``point`` which lies inside ``cone``.
+    ``point`` and ``ray_sum`` need to have type ``free_module_element``.
+    In order to guarantee the algorithm to stop, ``ray_sum`` needs to be
+    the sum of the rays which define ``cone``.
+
+    TESTS::
+
+        sage: from ehrhart_quasi_polynomial.ehrhart_piecewise import _move_point_inside_cone
+        sage: rays = (free_module_element([1, 0, 0]), free_module_element([0, 1, 1]))
+        sage: cone = Cone(rays)
+        sage: ray_sum = sum(rays) # free_module_element([1, 1, 1])
+        sage: _move_point_inside_cone(free_module_element([0, 0, 0]), ray_sum, cone)
+        (0, 0, 0)
+        # does not work...
+        # sage: _move_point_inside_cone(free_module_element([-1, 0, -1]), ray_sum, cone)
+        # (0, 1, 0)
+    """
+    if proj_point in cone:
+        return proj_point
+    
+    proj_point += ray_sum
+    while proj_point not in cone:
+        proj_point += ray_sum
+    return proj_point

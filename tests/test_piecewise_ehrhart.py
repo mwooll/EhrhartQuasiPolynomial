@@ -4,7 +4,7 @@ from ehrhart_quasi_polynomial.ehrhart_piecewise import (
     PiecewiseEhrhartQuasiPolynomial as PEQP,
     secondary_fan,
     create_polytope_from_matrix,
-    _compute_change_of_basis_matrix,
+    _compute_change_of_basis_matrices,
     _compute_periods,
     _generate_cone_points,
     _move_projected_point_inside_cone
@@ -31,30 +31,27 @@ class TestEhrhartPiecewise(TestCase):
     def tearDown(self):
         pass
 
-# =============================================================================
-#     def test_compute_change_of_basis_matrix(self):
-#         orth = tuple(free_module_element(orth) for orth
-#                       in [(1, 0, 1, -1), (0, 1, 0, 1)])
-#         lin = tuple(free_module_element(lin) for lin
-#                     in [(1, 0, -1, 0), (0, 1, -1, -1)])
-#         matrices = _compute_change_of_basis_matrix(orth, lin)
-#         R4_to_ol, R4_to_o, _ = matrices
-#         # expected = Matrix([])
-#         # self.assertEqual(expected, actual)
-# =============================================================================
+    def test_compute_change_of_basis_matrices(self):
+        orth = tuple(free_module_element(orth) for orth
+                      in [(1, 0, 1, -1), (0, 1, 0, 1)])
+        lin = tuple(free_module_element(lin) for lin
+                    in [(1, 0, -1, 0), (0, 1, -1, -1)])
+        K, R = _compute_change_of_basis_matrices(orth, lin)
 
+        self.assertEqual(K*orth[0], free_module_element([1, 0]))
+        self.assertEqual(K*orth[1], free_module_element([0, 1]))
+        self.assertEqual(K*lin[0], free_module_element([0, 0]))
+        self.assertEqual(K*lin[1], free_module_element([0, 0]))
+
+        self.assertEqual(R*free_module_element([1, 0]), orth[0])
+        self.assertEqual(R*free_module_element([0, 1]), orth[1])
 
     def test_process_secondary_fan(self):
         PEQP._process_secondary_fan(self.peqp)
 
-        self.assertEqual(self.peqp._amb_dim, 4)
-
-        expected_rays = [free_module_element(ray) for ray
-                         in [(-1, 2, -1, 3), (1, 3, 1, 2), (2, 1, 2, -1)]]
+        expected_rays = tuple(free_module_element(ray) for ray
+                              in [(-1, 2, -1, 3), (1, 3, 1, 2), (2, 1, 2, -1)])
         self.assertEqual(self.peqp._rays, expected_rays)
-
-        expected_max_cones = {4: [[0, 1], [1, 2]]}
-        self.assertEqual(self.peqp._maximal_cones, expected_max_cones)
 
         expected_orth = tuple(free_module_element(orth) for orth
                               in [(1, 0, 1, -1), (0, 1, 0, 1)])
@@ -64,16 +61,14 @@ class TestEhrhartPiecewise(TestCase):
                              in [(1, 0, -1, 0), (0, 1, -1, -1)])
         self.assertEqual(self.peqp._lin_vectors, expected_lin)
 
-        # self.assertEqual(self.change_of_basis_matrix, [])
 
-# =============================================================================
-#     def test_generate_cone_dicts(self):
-#         PEQP._process_secondary_fan(self.peqp)
-#         PEQP._generate_cone_dicts(self.peqp)
-#         cone_dicts = self.peqp._cone_dicts
-# 
-#         self.assertEqual(first, second)
-# =============================================================================
+    def test_generate_cone_dicts(self):
+        PEQP._process_secondary_fan(self.peqp)
+        cone_dicts = PEQP._generate_cone_dicts(self.peqp)
+
+        self.assertEqual(len(cone_dicts), 2)
+        for key in ["rays", "cone", "scaled_rays", "quotient"]:
+            self.assertTrue(key in cone_dicts[0])
         
 
     def test_create_polytope_from_matrix(self):

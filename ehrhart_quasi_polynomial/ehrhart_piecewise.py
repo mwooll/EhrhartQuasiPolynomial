@@ -24,46 +24,51 @@ class PiecewiseEhrhartQuasiPolynomial():
         self._amb_lattice = IntegralLattice(create_matrix(ZZ, self._amb_dim,
                                                           lambda x, y: int(x == y)))
 
-        # self._cone_dicts = self._generate_cone_dicts()
+        self._cone_dicts = self._generate_cone_dicts()
         # self._compute_piecewise()
 
     def _process_secondary_fan(self):
         sec_fan = secondary_fan(self._A)
         
+        self._fan_dim = sec_fan.dim()
         self._amb_dim = sec_fan.ambient_dim()
-        self._rays = [free_module_element(ray) for ray in sec_fan.rays()]
+        self._rays = tuple(free_module_element(ray) for ray in sec_fan.rays())
         self._maximal_cones = sec_fan.maximal_cones()
 
         self._orth_vectors = tuple(free_module_element([int(val) for val in vec.split(" ")])
                               for vec in sec_fan.fan_dict["ORTH_LINEALITY_SPACE"])
         self._lin_vectors = tuple(free_module_element([int(val) for val in vec.split(" ")])
                               for vec in sec_fan.fan_dict["LINEALITY_SPACE"])
-        M = _compute_change_of_basis_matrix(self._orth_vectors, self._lin_vectors)
-        self.change_of_basis_matrix = M
-        
+        K, R = _compute_change_of_basis_matrices(self._orth_vectors, self._lin_vectors)
+        self._projection_matrix = K
+        self._projection_inverse = R
+
+        self._projected_rays = tuple(K*ray for ray in self._rays)
 
     def _generate_cone_dicts(self):
         ray_scalars = _compute_periods(self._A, self._rays)
 
         dictionaries = []
         for ray_lists in  self._maximal_cones.values():
-             for ray_list in ray_lists:
-                cone_dic = {}
-                cone_dic["rays"] = [self._rays[idx] for idx in ray_list]
-                cone_dic["cone"] = Cone(cone_dic["rays"])
-                cone_dic["scaled_rays"] = [ray_scalars[idx]*self._rays[idx]
-                                           for idx in ray_list]
+            for ray_list in ray_lists:
+                scalars = [ray_scalars[idx] for idx in ray_list]
 
-                # need to change this:
-                lattice_basis = cone_dic["scaled_rays"] + self._lin_vectors
-                sub_lattice = self._amb_lattice.sublattice(lattice_basis)
-                cone_dic["quotient"] = self._amb_lattice.quotient(sub_lattice)
+                cone_dic = {}
+                cone_dic["rays"] = [self._projected_rays[idx] for idx in ray_list]
+                cone_dic["cone"] = Cone(cone_dic["rays"])
+                cone_dic["scaled_rays"] = [scale*ray
+                                           for scale, ray in zip(scalars, cone_dic["rays"])]
+
+                k = len(scalars)
+                grid = IntegralLattice(create_matrix.identity(k))
+                periodicity = grid.sublattice(create_matrix.diagonal(scalars))
+                cone_dic["quotient"] = grid.quotient(periodicity)
 
                 dictionaries.append(cone_dic)
         return dictionaries
 
     def _compute_piecewise(self):
-        num_variables = self._A.nrows() # = self._amb_dim
+        num_variables = len(self._orth_vectors)
         max_degree = self._A.ncols()
         needed_points = factorial(num_variables + max_degree)//(
             factorial(num_variables)*factorial(max_degree) )
@@ -71,17 +76,14 @@ class PiecewiseEhrhartQuasiPolynomial():
         R = PolynomialRing(QQ, "x", num_variables)
 
         for idx, cone_dict in enumerate(self._cone_dicts):
-            scaled_rays = cone_dict["scaled_rays"] + self._lin_vectors
-            cone_points = self._generate_cone_points(scaled_rays, needed_points)
+            cone_points = self._generate_cone_points(cone_dict["scaled_rays"], needed_points)
 
-            ray_sum = free_module_element(sum(scaled_rays))
-            proj_sum = self._projection(ray_sum)
-            non_zero_indexes = [k for k, val in enumerate(proj_sum) if val != 0]
+            ray_sum = free_module_element(sum(cone_dict["scaled_rays"]))
 
             polynomials = {}
-            for unlifted in cone_dict["quotient"]:
+            for unlifted in cone_dict["off_sets"]:
                 lifted = unlifted.lift()
-                proj_off = self._projection(lifted)
+                proj_off = self._projection_matrix*lifted
                 disp_fac = _move_projected_point_inside_cone(proj_off, proj_sum, non_zero_indexes)
                 starting_point = lifted + disp_fac*ray_sum
                 off_cone_points = [p + starting_point for p in cone_points]
@@ -104,16 +106,6 @@ class PiecewiseEhrhartQuasiPolynomial():
         inequalities = [[b[k]] + list(-self._A.rows()[k]) for k in range(self._A.nrows())]
         return Polyhedron(ieqs = inequalities)
 
-    def _projection(self, point):
-        # test:
-        #    new_repr = self.change_of_basis_matrix*free_module_element(point)
-        # adjust matrix to have zeros in the roes/columns of the l's
-        # such that for fans with only 1 ray, it is sent to (1,) ...
-        new_representation = free_module_element(point)*self.change_of_basis_inverse
-        eval_point = sum(new_representation[k]*o_vec
-                          for k, o_vec in enumerate(self._orth_vectors))
-        return eval_point
-
     def __call__(self, point):
         return self.evaluate(point)
 
@@ -122,11 +114,11 @@ class PiecewiseEhrhartQuasiPolynomial():
             raise ValueError("Dimension of ``point`` needs to be equal to the ambient"
                              f" dimension of ``self`` which is {self._amb_dim}.")
 
-        proj = self._projection(point)
+        proj = self._projection_metrix*free_module_element(point)
         for cone_dict in self._cone_dicts:
             if proj in cone_dict["cone"]:
-                off_set = cone_dict["quotient"](point)
-                return cone_dict["polynomials"][off_set](point)
+                off_set = cone_dict["quotient"](proj)
+                return cone_dict["polynomials"][off_set](proj)
         return 0
 
     def __repr__(self):
@@ -183,11 +175,22 @@ def secondary_fan(A):
     gfan_input = "{" + ", ".join(str(row) for row in A.rows()) + "}"
     return PolyhedralFan(gfan(gfan_input, "secondaryfan"))
 
-def _compute_change_of_basis_matrix(orth_vectors, lineality_vectors):
+def _compute_change_of_basis_matrices(orth_vectors, lin_vectors):
     """
     Return the change of basis matrix from the standard basis to the basis
     (orth_vectors, lineality_vectors)
     """
+    M = create_matrix(list(orth_vectors) + list(lin_vectors))
+    I = M.inverse()
+
+    r = len(orth_vectors)
+    m = len(lin_vectors)
+    O = create_matrix.block([[create_matrix.identity(r),
+                              create_matrix.zero(ZZ, nrows=r, ncols=m)]],
+                            subdivide=False)
+    K = O*I.transpose()
+    R = create_matrix(orth_vectors).transpose()
+    return K, R
 
 def _compute_periods(A, points):
     """

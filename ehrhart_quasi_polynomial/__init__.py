@@ -12,12 +12,18 @@ from .ehrhart_quasi_polynomial import (ehrhart_quasi_polynomial, get_period, get
                                        _drop_dimensions, _scale_down_vertices)
 
 from .ehrhart_piecewise import (PiecewiseEhrhartQuasiPolynomial,
-                                create_polytope_from_matrix)
+                                create_polytope_from_matrix,
+                                secondary_fan,
+                                _compute_change_of_basis_matrices,
+                                _compute_periods,
+                                _compute_off_sets,
+                                _generate_cone_points,
+                                _nudge_off_set)
 
 __all__ = [IntegerPeriodicFunctionRing.__name__,
            QuasiPolynomialRing.__name__,
            construct_quasipolynomial.__name__,
            ehrhart_quasi_polynomial.__name__,
-           get_period.__name__, get_gcd.__name__,
            PiecewiseEhrhartQuasiPolynomial.__name__,
-           create_polytope_from_matrix.__name__]
+           create_polytope_from_matrix.__name__,
+           secondary_fan.__name__]

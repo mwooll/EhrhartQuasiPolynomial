@@ -108,7 +108,7 @@ def _interpolate_polynomial(points_sequence, period, scale_factor):
     the specified period.
     Return instance of ``ehrhart_quasi_polynomial.quasipolynomial.QuasiPolynomialElement``
 
-    TESTS:
+    TESTS::
 
         sage: from ehrhart_quasi_polynomial.ehrhart_quasi_polynomial import (
         ....:    _points_contained_sequence, _interpolate_polynomial)

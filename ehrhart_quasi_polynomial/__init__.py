@@ -14,11 +14,10 @@ from .ehrhart_quasi_polynomial import (ehrhart_quasi_polynomial, get_period, get
 from .ehrhart_piecewise import (PiecewiseEhrhartQuasiPolynomial,
                                 create_polytope_from_matrix,
                                 secondary_fan,
+                                _process_fan_vectors,
                                 _compute_change_of_basis_matrices,
                                 _compute_periods,
-                                _compute_off_sets,
-                                _generate_cone_points,
-                                _nudge_off_set)
+                                _generate_cone_points)
 
 __all__ = [IntegerPeriodicFunctionRing.__name__,
            QuasiPolynomialRing.__name__,

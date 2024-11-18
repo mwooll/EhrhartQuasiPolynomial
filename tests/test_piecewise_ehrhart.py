@@ -2,14 +2,12 @@ from itertools import combinations_with_replacement
 
 from ehrhart_quasi_polynomial.ehrhart_piecewise import (
     PiecewiseEhrhartQuasiPolynomial as PEQP,
-    secondary_fan,
     create_polytope_from_matrix,
+    secondary_fan,
+    _process_fan_vectors,
     _compute_change_of_basis_matrices,
     _compute_periods,
-    _compute_off_sets,
-    _generate_cone_points,
-    _nudge_off_set
-    )
+    _generate_cone_points)
 
 from sage.geometry.cone import Cone
 from sage.geometry.polyhedron.constructor import Polyhedron
@@ -37,19 +35,16 @@ class TestEhrhartPiecewise(TestCase):
         pass
 
     def test_compute_change_of_basis_matrices(self):
-        orth = tuple(free_module_element(orth) for orth
-                      in [(1, 0, 1, -1), (0, 1, 0, 1)])
+        self.fail()
+
         lin = tuple(free_module_element(lin) for lin
                     in [(1, 0, -1, 0), (0, 1, -1, -1)])
-        K, R = _compute_change_of_basis_matrices(orth, lin)
+        rays = tuple(free_module_element(ray) for ray
+                      in [(1, 0, 1, -1), (0, 1, 0, 1)])
+        K, M = _compute_change_of_basis_matrices(lin, rays)
 
-        self.assertEqual(K*orth[0], free_module_element([1, 0]))
-        self.assertEqual(K*orth[1], free_module_element([0, 1]))
-        self.assertEqual(K*lin[0], free_module_element([0, 0]))
-        self.assertEqual(K*lin[1], free_module_element([0, 0]))
-
-        self.assertEqual(R*free_module_element([1, 0]), orth[0])
-        self.assertEqual(R*free_module_element([0, 1]), orth[1])
+        self.assertEqual(K*free_module_element([1, 0, 0, 0]), lin[0])
+    
 
     def test_process_secondary_fan(self):
         PEQP._process_secondary_fan(self.peqp)
@@ -58,20 +53,23 @@ class TestEhrhartPiecewise(TestCase):
                               in [(-1, 2, -1, 3), (1, 3, 1, 2), (2, 1, 2, -1)])
         self.assertEqual(self.peqp._rays, expected_rays)
 
-        expected_orth = tuple(free_module_element(orth) for orth
-                              in [(1, 0, 1, -1), (0, 1, 0, 1)])
-        self.assertEqual(self.peqp._orth_vectors, expected_orth)
-
         expected_lin = tuple(free_module_element(lin) for lin
                              in [(1, 0, -1, 0), (0, 1, -1, -1)])
         self.assertEqual(self.peqp._lin_vectors, expected_lin)
+
+    def test_process_fan_vectors(self):
+        sec_fan = secondary_fan(self.peqp._A)
+        expected = tuple(free_module_element(lin) for lin
+                    in [(1, 0, -1, 0), (0, 1, -1, -1)])
+        actual = _process_fan_vectors(sec_fan.fan_dict["LINEALITY_SPACE"])
+        self.assertEqual(expected, actual)
 
     def test_generate_cone_dicts(self):
         PEQP._process_secondary_fan(self.peqp)
         cone_dicts = PEQP._generate_cone_dicts(self.peqp)
 
         self.assertEqual(len(cone_dicts), 2)
-        for key in ["rays", "cone", "scaled_rays", "off_sets"]:
+        for key in ["cone", "scaled_rays", "quotient"]:
             self.assertTrue(key in cone_dicts[0])
 
     def test_create_polytope_from_matrix(self):
@@ -120,21 +118,16 @@ class TestEhrhartPiecewise(TestCase):
         expected = x1 + x2
         self.assertEqual(expected, actual)
 
-    def test_compute_off_sets(self):
-        orth = tuple(free_module_element(orth) for orth
-                      in [(1, 0, 1, -1), (0, 1, 0, 1)])
-        lin = tuple(free_module_element(lin) for lin
-                    in [(1, 0, -1, 0), (0, 1, -1, -1)])
-        M, I, K, R = _compute_change_of_basis_matrices(orth, lin)
-
+    def test_transform_polynomial(self):
         self.fail()
 
 if __name__ == "__main__":
     # main()
 
+
     A = Matrix([[-1, 0], [0, -1], [1, 1]])
     p = PEQP(A)
-    print(p._cone_dicts[0])
+    print(p._cone_dicts[0]["polynomials"])
 
     num_int_points = lambda A, b: len(create_polytope_from_matrix(A, b).integral_points())
 
@@ -144,23 +137,6 @@ if __name__ == "__main__":
             actual = p(b)
             if actual != expected:
                 print(b, expected, actual)
+        print("all points were tested")
 
-    dim = A.nrows()
-    # test_combinations(p, dim)
-
-    def test_Q_off_sets():
-        V = IntegralLattice(Matrix.identity(dim))
-        W = V.sublattice(Matrix(p._orth_vectors + p._lin_vectors))
-        Q = V.quotient(W)
-        for a in Q:
-            lift = a.lift() + sum(p._rays)
-            print(a, lift, num_int_points(A, lift))
-
-            print(p._investigate(lift))
-            proj = p._projection_matrix*lift
-            inv = p._projection_inverse*proj
-            print(lift - inv, num_int_points(A, inv))
-            print()
-
-    test_Q_off_sets()
-    
+    test_combinations(p, A.nrows())

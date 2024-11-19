@@ -125,9 +125,9 @@ if __name__ == "__main__":
     # main()
 
 
-    A = Matrix([[-1, 0], [0, -1], [1, 1]])
+    A = Matrix([[-1, 0], [0, -1], [1, 1], [0, 1]])
     p = PEQP(A)
-    print(p._cone_dicts[0]["polynomials"])
+    # print(p._cone_dicts[0]["polynomials"])
 
     num_int_points = lambda A, b: len(create_polytope_from_matrix(A, b).integral_points())
 

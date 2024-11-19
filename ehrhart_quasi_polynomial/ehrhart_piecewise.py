@@ -75,7 +75,6 @@ class PiecewiseEhrhartQuasiPolynomial():
             factorial(self._num_variables)*factorial(max_degree) )
 
         points = _generate_cone_points(self._num_variables, needed_points)
-        # print(points)
         for cone_dict in self._cone_dicts:
             cone_points = {0: (points, [tuple(b) for b in points])}
             ray_sum = sum(cone_dict["scaled_rays"])

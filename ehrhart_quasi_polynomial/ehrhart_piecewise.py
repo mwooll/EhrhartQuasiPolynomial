@@ -123,11 +123,12 @@ class PiecewiseEhrhartQuasiPolynomial():
         if len(point) != self._amb_dim:
             raise ValueError("Dimension of ``point`` needs to be equal to the ambient"
                               f" dimension of ``self`` which is {self._amb_dim}.")
-
+    
         for cone_dict in self._cone_dicts:
             if point in cone_dict["cone"]:
-                off_set = cone_dict["quotient"](point)
-                return cone_dict["polynomials"][off_set](*point)
+                off_set = cone_dict["quotient"][cone_dict["quotient"](point)[0]]
+                eval_p = cone_dict["change_of_basis_inverse"]*(free_module_element(point) - off_set.lift())
+                return cone_dict["polynomials"][off_set](*eval_p[self._amb_dim - self._num_variables:])
         return 0
 
     def __repr__(self):

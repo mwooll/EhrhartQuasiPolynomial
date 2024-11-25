@@ -23,7 +23,7 @@ def ehrhart_quasi_polynomial(vertices):
     Return a 'ehrhart_quasi_polynomial.quasipolynomial.QuasiPolynomialElement'
     
     The Ehrhart quasi-polynomial of a polytope `P` is a quasi-polynomial `p`
-    where `p(k)` tells you how many integral points `kP` contains.
+    where `p(k)` evaluates to how many integral points `kP` contains.
     If `P` is a rational polytope then a true QuasiPolynomial will be returned.
     If `P` is an integral polytope then a normal polynomial would suffice,
     but for consistency always a QuasiPolynomial is returned.

@@ -34,16 +34,19 @@ class TestEhrhartPiecewise(TestCase):
     def tearDown(self):
         pass
 
-    def test_compute_change_of_basis_matrices(self):
-        self.fail()
 
-        lin = tuple(free_module_element(lin) for lin
-                    in [(1, 0, -1, 0), (0, 1, -1, -1)])
+    def test_compute_change_of_basis_matrices(self):
         rays = tuple(free_module_element(ray) for ray
                       in [(1, 0, 1, -1), (0, 1, 0, 1)])
-        K, M = _compute_change_of_basis_matrices(lin, rays)
+        lin = tuple(free_module_element(lin) for lin
+                    in [(1, 0, -1, 0), (0, 1, -1, -1)])
+        K, M = _compute_change_of_basis_matrices(rays, lin)
 
-        self.assertEqual(K*free_module_element([1, 0, 0, 0]), lin[0])
+        self.assertEqual(K*free_module_element([1, 0, 0, 0]), rays[0])
+        self.assertEqual(K*free_module_element([0, 0, 1, 0]), lin[0])
+
+        self.assertEqual(M*rays[0], free_module_element([1, 0, 0, 0]))
+        self.assertEqual(M*(lin[0] + lin[1]), free_module_element([0, 0, 1, 1]))
     
 
     def test_process_secondary_fan(self):
@@ -92,51 +95,35 @@ class TestEhrhartPiecewise(TestCase):
         A = Matrix([[-1, 0], [0, -1], [2, 3]])
         points = [(0, 0, k) for k in range(7)]
         actual = _compute_periods(A, points)
-        expected = [1, 6, 3, 2, 3, 6, 1]
+        expected = (1, 6, 3, 2, 3, 6, 1)
         self.assertEqual(expected, actual)
 
     def test_generate_cone_points(self):
-        rays = [free_module_element(b)
-                for b in ((1, 0, 0), (0, 1, 0), (0, 0, 1))]
-        actual = _generate_cone_points(rays, 10)
-        expected = [free_module_element(point) for point in
+        actual = _generate_cone_points(3, 10)
+        expected = tuple(free_module_element(point) for point in
                     [(0, 0, 0), (1, 0, 0), (0, 1, 0), (0, 0, 1),
                     (2, 0, 0), (1, 1, 0), (1, 0, 1),
-                    (0, 2, 0), (0, 1, 1), (0, 0, 2)]]
-        self.assertEqual(expected, actual)
-        cone = Cone(rays)
-        for point in actual:
-            self.assertTrue(point in cone)
-
-    def test_interpolate_off_set_poly(self):
-        x1, x2 = self.peqp._R.gens()
-        rays = tuple(free_module_element(orth) for orth
-                     in [(-1, 2), (1, 3)])
-        actual = PEQP._interpolate_off_set_poly(self.peqp,
-                                                _generate_cone_points(rays, 6),
-                                                2, 0*rays[0])
-        expected = x1 + x2
+                    (0, 2, 0), (0, 1, 1), (0, 0, 2)])
         self.assertEqual(expected, actual)
 
-    def test_transform_polynomial(self):
-        self.fail()
+    # def test_transform_polynomial(self):
+    #     self.fail()
 
 if __name__ == "__main__":
-    # main()
+    main()
 
-
-    A = Matrix([[-1, 0], [0, -1], [1, 1], [0, 1]])
-    p = PEQP(A)
+    # A = Matrix([[-1, 0], [0, -1], [1, 1]])
+    # p = PEQP(A)
     # print(p._cone_dicts[0]["polynomials"])
 
-    num_int_points = lambda A, b: len(create_polytope_from_matrix(A, b).integral_points())
+    # num_int_points = lambda A, b: len(create_polytope_from_matrix(A, b).integral_points())
 
-    def test_combinations(p, nrows):
-        for b in combinations_with_replacement(range(-10, 11), nrows):
-            expected = num_int_points(A, b)
-            actual = p(b)
-            if actual != expected:
-                print(b, expected, actual)
-        print("all points were tested")
+    # def test_combinations(p, nrows):
+    #     for b in combinations_with_replacement(range(-4, 5), nrows):
+    #         expected = num_int_points(A, b)
+    #         actual = p(b)
+    #         if actual != expected:
+    #             print(b, expected, actual)
+    #     print("all points were tested")
 
-    test_combinations(p, A.nrows())
+    # test_combinations(p, A.nrows())

@@ -1,6 +1,6 @@
 from itertools import combinations_with_replacement
 
-from .ehrhart_quasi_polynomial import get_period
+from .ehrhart_quasi_polynomial import get_period, get_gcd
 
 from sage.functions.other import factorial
 from sage.geometry.cone import Cone
@@ -27,19 +27,19 @@ class PiecewiseEhrhartQuasiPolynomial():
 
     def _process_secondary_fan(self):
         sec_fan = secondary_fan(self._A)
-        
+
         self._amb_dim = sec_fan.ambient_dim()
         self._ZZ_lattice = IntegralLattice(create_matrix.identity(self._amb_dim))
 
         self._rays = tuple(free_module_element(ray) for ray in sec_fan.rays())
-        self._scalars = _compute_periods(self._A, self._rays)
+        self._scalars = _hat_denominator(self._A, self._rays)
+
         self._maximal_cones = sec_fan.maximal_cones()
 
         self._lin_vectors = _process_fan_vectors(sec_fan.fan_dict["LINEALITY_SPACE"])
         self._minus_lin = tuple(-lin for lin in self._lin_vectors)
 
         self._num_variables = self._amb_dim - len(self._lin_vectors)
-
         self._R = PolynomialRing(QQ, "x", self._num_variables)
         self._S = PolynomialRing(QQ, "y", self._amb_dim)
 
@@ -217,12 +217,34 @@ def _compute_periods(A, points):
     return tuple(get_period(create_polytope_from_matrix(A, b).Vrepresentation())
                  for b in points)
 
+def _hat_denominator(A, points):
+    """
+    Return a list of the den_hat of `P_A(b)` for all `b` in ``points``
+    An error will be raised if some ``b`` is not compatible with ``A``,
+    see ``create_polytope_from_matrix`` for details.
+
+    TESTS::
+        
+        sage: from ehrhart_quasi_polynomial.ehrhart_piecewise import _hat_denominator
+        sage: A = Matrix([[-1, 0], [0, -1], [2, 1]])
+        sage: points = [(0, 0, 0), (0, 0, 1), (0, 0, 2)]
+        sage: _hat_denominator(A, points)
+        [1, 2, 1]
+
+        sage: points = [()]
+        sage: _hat_denominator(A, points)
+        []
+    """
+    polytopes = [create_polytope_from_matrix(A, b).Vrepresentation()
+                 for b in points]
+    return tuple(get_period(poly) / get_gcd(poly)
+                 for poly in polytopes)
+
 def _get_basis_vectors(lin_vectors, scaled_rays, amb_dim):
     if len(lin_vectors) + len(scaled_rays) == amb_dim:
         return scaled_rays
 
-    raise NotImplementedError
-    # construct basis of R^n out of n+k vectors
+    raise NotImplementedError("Need to construct basis of R^n out of n+k vectors.")
 
 def _compute_change_of_basis_matrices(cone_basis, lin_vectors):
     """

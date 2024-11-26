@@ -1,4 +1,4 @@
-from itertools import combinations_with_replacement
+from itertools import combinations_with_replacement, product
 
 from .ehrhart_quasi_polynomial import get_period, get_gcd
 
@@ -9,7 +9,6 @@ from sage.interfaces.gfan import gfan
 from sage.matrix.constructor import Matrix as create_matrix
 from sage.modules.free_module_element import free_module_element
 from sage.modules.free_quadratic_module_integer_symmetric import IntegralLattice
-from sage.rings.integer_ring import ZZ
 from sage.rings.polynomial.groebner_fan import PolyhedralFan
 from sage.rings.polynomial.polynomial_ring_constructor import PolynomialRing
 from sage.rings.rational_field import QQ
@@ -41,33 +40,35 @@ class PiecewiseEhrhartQuasiPolynomial():
 
         self._num_variables = self._amb_dim - len(self._lin_vectors)
         self._R = PolynomialRing(QQ, "x", self._num_variables)
-        self._S = PolynomialRing(QQ, "y", self._amb_dim)
 
 
     def _generate_cone_dicts(self):
-        dictionaries = []
+        cone_dicts = []
         for ray_lists in  self._maximal_cones.values():
             for ray_list in ray_lists:
-                cone_dic = {}
-                cone_dic["scaled_rays"] = tuple(self._scalars[idx]*self._rays[idx]
+                cone_dict = {}
+                cone_dict["scaled_rays"] = tuple(self._scalars[idx]*self._rays[idx]
                                                 for idx in ray_list)
-                cone_basis = cone_dic["scaled_rays"] + self._lin_vectors
-                cone_dic["cone"] = Cone(cone_basis + self._minus_lin)
+                cone_basis = cone_dict["scaled_rays"] + self._lin_vectors
+                cone_dict["cone"] = Cone(cone_basis + self._minus_lin)
 
                 cone_lattice = self._ZZ_lattice.sublattice(cone_basis)
-                cone_dic["quotient"] = self._ZZ_lattice.quotient(cone_lattice)
-                cone_dic["basis"] = _get_basis_vectors(self._lin_vectors,
-                                                       cone_dic["scaled_rays"],
+                cone_dict["quotient"] = self._ZZ_lattice.quotient(cone_lattice)
+                cone_dict["lifts"] = _determine_lifts(cone_dict["quotient"])
+                # print(cone_dict["lifts"])
+
+                cone_dict["basis"] = _get_basis_vectors(self._lin_vectors,
+                                                       cone_dict["scaled_rays"],
                                                        self._amb_dim)
 
-                K, M, = _compute_change_of_basis_matrices(cone_dic["basis"],
+                K, M, = _compute_change_of_basis_matrices(cone_dict["basis"],
                                                           self._lin_vectors)
-                cone_dic["change_of_basis_matrix"] = K
-                cone_dic["change_of_basis_inverse"] = M
-                cone_dic["lift_matrix"] = create_matrix(cone_dic["basis"]).T
+                cone_dict["change_of_basis_matrix"] = K
+                cone_dict["change_of_basis_inverse"] = M
+                cone_dict["lift_matrix"] = create_matrix(cone_dict["basis"]).T
 
-                dictionaries.append(cone_dic)
-        return dictionaries
+                cone_dicts.append(cone_dict)
+        return cone_dicts
 
     def _compute_piecewise(self):
         max_degree = self._A.ncols()
@@ -80,8 +81,8 @@ class PiecewiseEhrhartQuasiPolynomial():
             ray_sum = sum(cone_dict["scaled_rays"])
 
             polynomials = {}
-            for off_set in cone_dict["quotient"]:
-                nudge = off_set.lift()
+            for rep, lift in cone_dict["lifts"].items():
+                nudge = lift
                 mult = 0
                 while nudge not in cone_dict["cone"]:
                     mult += 1
@@ -94,15 +95,14 @@ class PiecewiseEhrhartQuasiPolynomial():
 
                 num_integral_points = []
                 for point in cone_points[mult][0]:
-                    polytope_point = cone_dict["lift_matrix"]*point + off_set.lift()
+                    polytope_point = cone_dict["lift_matrix"]*point + lift
                     polytope = self._create_polytope_from_matrix(polytope_point)
                     num_integral_points.append(len(polytope.integral_points()))
 
-                # print(max_degree, cone_points[mult][1], num_integral_points)
                 off_set_poly = self._R.interpolation(max_degree,
                                                      cone_points[mult][1],
                                                      num_integral_points)
-                polynomials[off_set] = off_set_poly
+                polynomials[rep] = off_set_poly
 
             cone_dict["polynomials"] = polynomials
 
@@ -115,14 +115,6 @@ class PiecewiseEhrhartQuasiPolynomial():
         inequalities = [[b[k]] + list(-self._A.rows()[k]) for k in range(self._A.nrows())]
         return Polyhedron(ieqs = inequalities)
 
-    # def _transform_polynomial(self, cone_dict, cone_polynomial):
-    #     coefficients = [cone_dict["change_of_basis_inverse"]*vector
-    #                     for vector in cone_dict["basis"]]
-    #     new_variables = [free_module_element(self._S.gens())*coeff
-    #                      for coeff in coefficients]
-    #     transformed_polynomial = cone_polynomial(*new_variables)
-    #     return transformed_polynomial
-
     def __call__(self, point):
         return self.evaluate(point)
 
@@ -131,13 +123,15 @@ class PiecewiseEhrhartQuasiPolynomial():
             raise ValueError("Dimension of ``point`` needs to be equal to the ambient"
                               f" dimension of ``self`` which is {self._amb_dim}.")
     
-        for cone_dict in self._cone_dicts:
+        for k, cone_dict in enumerate(self._cone_dicts):
             if point in cone_dict["cone"]:
-                # print(True)
-                off_set = cone_dict["quotient"][cone_dict["quotient"](point)[0]]
-                eval_p = cone_dict["change_of_basis_inverse"]*(
-                    free_module_element(point) - off_set.lift())
-                return cone_dict["polynomials"][off_set](*eval_p[:self._num_variables])
+                rep = tuple(cone_dict["quotient"](point))
+                lift = cone_dict["lifts"][rep]
+                eval_p = ( cone_dict["change_of_basis_inverse"]*(
+                    free_module_element(point) - lift) )[:self._num_variables]
+
+                result = cone_dict["polynomials"][rep](*eval_p)
+                return result
         return 0
 
     def __repr__(self):
@@ -200,23 +194,6 @@ def _process_fan_vectors(vectors):
     return tuple(free_module_element([int(val) for val in vec.split(" ")])
                  for vec in vectors)
 
-def _compute_periods(A, points):
-    """
-    Return a list of the periods of `P_A(b)` for all `b` in ``points``
-    An error will be raised if some ``b`` is not compatible with ``A``,
-    see ``create_polytope_from_matrix`` for details.
-
-    TESTS::
-        
-        sage: from ehrhart_quasi_polynomial.ehrhart_piecewise import _compute_periods
-        sage: A = Matrix([[-1, 0], [0, -1], [2, 1]])
-        sage: points = [(0, 0, 0), (0, 0, 1), (0, 0, 2)]
-        sage: _compute_periods(A, points)
-        [1, 2, 1]
-    """
-    return tuple(get_period(create_polytope_from_matrix(A, b).Vrepresentation())
-                 for b in points)
-
 def _hat_denominator(A, points):
     """
     Return a list of the den_hat of `P_A(b)` for all `b` in ``points``
@@ -239,6 +216,13 @@ def _hat_denominator(A, points):
                  for b in points]
     return tuple(get_period(poly) / get_gcd(poly)
                  for poly in polytopes)
+
+def _determine_lifts(quotient):
+    representatives = product(*(range(k) for k in quotient.invariants()))
+    lift_matrix = create_matrix([gen.lift() for gen in quotient.gens()]).T
+    lifts = {tuple(rep): lift_matrix*free_module_element(rep)
+             for rep in representatives}
+    return lifts
 
 def _get_basis_vectors(lin_vectors, scaled_rays, amb_dim):
     if len(lin_vectors) + len(scaled_rays) == amb_dim:

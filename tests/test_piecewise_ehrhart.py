@@ -1,19 +1,15 @@
-from itertools import combinations_with_replacement
-
 from ehrhart_quasi_polynomial.ehrhart_piecewise import (
     PiecewiseEhrhartQuasiPolynomial as PEQP,
     create_polytope_from_matrix,
     secondary_fan,
     _process_fan_vectors,
     _compute_change_of_basis_matrices,
-    _compute_periods,
+    _hat_denominator,
     _generate_cone_points)
 
-from sage.geometry.cone import Cone
 from sage.geometry.polyhedron.constructor import Polyhedron
 from sage.matrix.constructor import Matrix
 from sage.modules.free_module_element import free_module_element
-from sage.modules.free_quadratic_module_integer_symmetric import IntegralLattice
 from sage.rings.polynomial.polynomial_ring_constructor import PolynomialRing
 from sage.rings.rational_field import QQ
 
@@ -30,9 +26,6 @@ class TestEhrhartPiecewise(TestCase):
             _R = PolynomialRing(QQ, 2, "x")
 
         cls.peqp = PEQP_Proxy()
-
-    def tearDown(self):
-        pass
 
 
     def test_compute_change_of_basis_matrices(self):
@@ -91,13 +84,6 @@ class TestEhrhartPiecewise(TestCase):
         actual_unsafe = PEQP._create_polytope_from_matrix(self.peqp, b)
         self.assertEqual(expected, actual_unsafe)
 
-    def test_compute_periods(self):
-        A = Matrix([[-1, 0], [0, -1], [2, 3]])
-        points = [(0, 0, k) for k in range(7)]
-        actual = _compute_periods(A, points)
-        expected = (1, 6, 3, 2, 3, 6, 1)
-        self.assertEqual(expected, actual)
-
     def test_generate_cone_points(self):
         actual = _generate_cone_points(3, 10)
         expected = tuple(free_module_element(point) for point in
@@ -106,24 +92,24 @@ class TestEhrhartPiecewise(TestCase):
                     (0, 2, 0), (0, 1, 1), (0, 0, 2)])
         self.assertEqual(expected, actual)
 
-    # def test_transform_polynomial(self):
-    #     self.fail()
 
 if __name__ == "__main__":
-    main()
+    # main()
 
-    # A = Matrix([[-1, 0], [0, -1], [1, 1]])
-    # p = PEQP(A)
-    # print(p._cone_dicts[0]["polynomials"])
+    from itertools import combinations_with_replacement
 
-    # num_int_points = lambda A, b: len(create_polytope_from_matrix(A, b).integral_points())
+    A = Matrix([[-1, 0], [0, -1], [1, 2], [0, 1]])
+    p = PEQP(A)
+    print(p._cone_dicts[0]["polynomials"])
 
-    # def test_combinations(p, nrows):
-    #     for b in combinations_with_replacement(range(-4, 5), nrows):
-    #         expected = num_int_points(A, b)
-    #         actual = p(b)
-    #         if actual != expected:
-    #             print(b, expected, actual)
-    #     print("all points were tested")
+    num_int_points = lambda A, b: len(create_polytope_from_matrix(A, b).integral_points())
 
-    # test_combinations(p, A.nrows())
+    def test_combinations(p, nrows):
+        for b in combinations_with_replacement(range(-5, 15), nrows):
+            expected = num_int_points(A, b)
+            actual = p(b)
+            if actual != expected:
+                print(b, expected, actual)
+        print("all points were tested")
+
+    test_combinations(p, A.nrows())

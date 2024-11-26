@@ -15,8 +15,9 @@ from .ehrhart_piecewise import (PiecewiseEhrhartQuasiPolynomial,
                                 create_polytope_from_matrix,
                                 secondary_fan,
                                 _process_fan_vectors,
+                                _hat_denominator,
+                                _determine_lifts,
                                 _compute_change_of_basis_matrices,
-                                _compute_periods,
                                 _generate_cone_points)
 
 __all__ = [IntegerPeriodicFunctionRing.__name__,

@@ -86,7 +86,7 @@ def get_period(vertices):
 # gcd
 def get_gcd(vertices):
     """
-    Return the gcd of the vertices.
+    Return the gcd of the vertices if gcd is not 0 
     The gcd of a set of vertices is the largest integer such that every
     coordinate of every vertex is divisible by said integer.
 
@@ -98,7 +98,8 @@ def get_gcd(vertices):
         sage: get_gcd([[0, 0], [2, 0], [0, 3]])
         1
     """
-    return gcd(num for vertex in vertices for num in vertex)
+    GCD = gcd(num for vertex in vertices for num in vertex)
+    return GCD if GCD else 1
 
 
 # interpolate polynomial

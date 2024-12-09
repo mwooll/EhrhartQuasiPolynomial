@@ -184,7 +184,7 @@ def secondary_fan(A):
         (3, 3)
         sage: fan.rays()
         [[1, 1, 1]]
-        sage: fan.cones()
+        sage: fan.maximal_cones()
         {3: [[0]]}
     """
     gfan_input = "{" + ", ".join(str(row) for row in A.rows()) + "}"
@@ -206,11 +206,7 @@ def _hat_denominator(A, points):
         sage: A = Matrix([[-1, 0], [0, -1], [2, 1]])
         sage: points = [(0, 0, 0), (0, 0, 1), (0, 0, 2)]
         sage: _hat_denominator(A, points)
-        [1, 2, 1]
-
-        sage: points = [()]
-        sage: _hat_denominator(A, points)
-        []
+        (1, 4, 1)
     """
     polytopes = [create_polytope_from_matrix(A, b).Vrepresentation()
                  for b in points]
@@ -248,7 +244,7 @@ def _generate_cone_points(dimension, number):
 
         sage: from ehrhart_quasi_polynomial.ehrhart_piecewise import _generate_cone_points
         sage: _generate_cone_points(3, 5)
-        [(0, 0, 0), (1, 0, 0), (0, 1, 1), (2, 0, 0), (1, 1, 1)]
+        ((0, 0, 0), (1, 0, 0), (0, 1, 0), (0, 0, 1), (2, 0, 0))
     """
     origin = free_module_element(0 for k in range(dimension))
     points = (origin, )

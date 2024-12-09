@@ -94,22 +94,4 @@ class TestEhrhartPiecewise(TestCase):
 
 
 if __name__ == "__main__":
-    # main()
-
-    from itertools import combinations_with_replacement
-
-    A = Matrix([[-1, 0], [0, -1], [1, 2], [0, 1]])
-    p = PEQP(A)
-    print(p._cone_dicts[0]["polynomials"])
-
-    num_int_points = lambda A, b: len(create_polytope_from_matrix(A, b).integral_points())
-
-    def test_combinations(p, nrows):
-        for b in combinations_with_replacement(range(-5, 15), nrows):
-            expected = num_int_points(A, b)
-            actual = p(b)
-            if actual != expected:
-                print(b, expected, actual)
-        print("all points were tested")
-
-    test_combinations(p, A.nrows())
+    main()

@@ -1,3 +1,4 @@
+
 from itertools import combinations_with_replacement, product
 
 from .ehrhart_quasi_polynomial import get_period, get_gcd
@@ -75,7 +76,7 @@ class PiecewiseEhrhartQuasiPolynomial():
         needed_points = factorial(self._num_variables + max_degree + 1)//(
             factorial(self._num_variables)*factorial(max_degree) )
 
-        points = _generate_cone_points(self._num_variables, needed_points)
+        points = _simplex_points(self._num_variables, needed_points)
         for cone_dict in self._cone_dicts:
             cone_points = {0: (points, [tuple(b) for b in points])}
             ray_sum = sum(cone_dict["scaled_rays"])
@@ -234,6 +235,21 @@ def _compute_change_of_basis_matrices(cone_basis, lin_vectors):
     K = create_matrix(cone_basis + lin_vectors).T
     M = K.inverse()
     return K, M
+
+def _simplex_points(dim, scaler):
+    """
+    Return all integral points of a simplex of dimension ``dim`` scaled
+    by ``scaler``. Always returns exactly `dim + scaler choose dim` points.
+
+    TESTS:
+
+        sage: from ehrhart_quasi_polynomial.ehrhart_piecewise import _simplex_points
+        sage: _simplex_points(2, 2)
+        ((0, 0), (0, 1), (0, 2), (1, 0), (1, 1), (2, 0))
+    """
+    vertices = ((scaler*(k == d) for k in range(dim)) for d in range(dim+1))
+    simplex = Polyhedron(vertices)
+    return simplex.integral_points()
 
 def _generate_cone_points(dimension, number):
     """

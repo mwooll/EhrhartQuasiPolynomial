@@ -5,7 +5,7 @@ from ehrhart_quasi_polynomial.ehrhart_piecewise import (
     _process_fan_vectors,
     _compute_change_of_basis_matrices,
     _hat_denominator,
-    _generate_cone_points)
+    _simplex_points)
 
 from sage.geometry.polyhedron.constructor import Polyhedron
 from sage.matrix.constructor import Matrix
@@ -84,12 +84,12 @@ class TestEhrhartPiecewise(TestCase):
         actual_unsafe = PEQP._create_polytope_from_matrix(self.peqp, b)
         self.assertEqual(expected, actual_unsafe)
 
-    def test_generate_cone_points(self):
-        actual = _generate_cone_points(3, 10)
+    def test_simplex_points(self):
+        actual = _simplex_points(3, 2)
         expected = tuple(free_module_element(point) for point in
-                    [(0, 0, 0), (1, 0, 0), (0, 1, 0), (0, 0, 1),
-                    (2, 0, 0), (1, 1, 0), (1, 0, 1),
-                    (0, 2, 0), (0, 1, 1), (0, 0, 2)])
+                    [(0, 0, 0), (0, 0, 1), (0, 0, 2), (0, 1, 0),
+                    (0, 1, 1), (0, 2, 0), (1, 0, 0),
+                    (1, 0, 1), (1, 1, 0), (2, 0, 0)])
         self.assertEqual(expected, actual)
 
 

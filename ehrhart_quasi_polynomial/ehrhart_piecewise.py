@@ -1,9 +1,7 @@
-
-from itertools import combinations_with_replacement, product
+from itertools import product, combinations_with_replacement
 
 from .ehrhart_quasi_polynomial import get_period, get_gcd
 
-from sage.functions.other import factorial
 from sage.geometry.cone import Cone
 from sage.geometry.polyhedron.constructor import Polyhedron
 from sage.interfaces.gfan import gfan
@@ -39,6 +37,7 @@ class PiecewiseEhrhartQuasiPolynomial():
         self._lin_vectors = _process_fan_vectors(sec_fan.fan_dict["LINEALITY_SPACE"])
         self._minus_lin = tuple(-lin for lin in self._lin_vectors)
 
+        self._max_degree = self._A.ncols()
         self._num_variables = self._amb_dim - len(self._lin_vectors)
         self._R = PolynomialRing(QQ, "x", self._num_variables)
 
@@ -62,8 +61,8 @@ class PiecewiseEhrhartQuasiPolynomial():
                                                        cone_dict["scaled_rays"],
                                                        self._amb_dim)
 
-                K, M, = _compute_change_of_basis_matrices(cone_dict["basis"],
-                                                          self._lin_vectors)
+                K, M = _compute_change_of_basis_matrices(cone_dict["basis"],
+                                                         self._lin_vectors)
                 cone_dict["change_of_basis_matrix"] = K
                 cone_dict["change_of_basis_inverse"] = M
                 cone_dict["lift_matrix"] = create_matrix(cone_dict["basis"]).T
@@ -72,41 +71,46 @@ class PiecewiseEhrhartQuasiPolynomial():
         return cone_dicts
 
     def _compute_piecewise(self):
-        max_degree = self._A.ncols()
-        needed_points = factorial(self._num_variables + max_degree + 1)//(
-            factorial(self._num_variables)*factorial(max_degree) )
-
-        points = _simplex_points(self._num_variables, needed_points)
+        points = _generate_cone_points(self._num_variables, self._max_degree)
+        cone_points = {0: points}
         for cone_dict in self._cone_dicts:
-            cone_points = {0: (points, [tuple(b) for b in points])}
             ray_sum = sum(cone_dict["scaled_rays"])
 
             polynomials = {}
             for rep, lift in cone_dict["lifts"].items():
-                nudge = lift
-                mult = 0
-                while nudge not in cone_dict["cone"]:
-                    mult += 1
-                    nudge += ray_sum
-
-                if mult not in cone_points:
-                    mults = free_module_element([mult for k in range(self._num_variables)])
-                    higher_points = [b + mults for b in cone_points[0][0]]
-                    cone_points[mult] = (higher_points, [tuple(b) for b in higher_points])
-
-                num_integral_points = []
-                for point in cone_points[mult][0]:
-                    polytope_point = cone_dict["lift_matrix"]*point + lift
-                    polytope = self._create_polytope_from_matrix(polytope_point)
-                    num_integral_points.append(len(polytope.integral_points()))
-
-                off_set_poly = self._R.interpolation(max_degree,
-                                                     cone_points[mult][1],
-                                                     num_integral_points)
+                mult = self._nudge_off_set(lift, cone_points,
+                                           cone_dict["cone"], ray_sum)
+                off_set_poly = self._get_off_set_poly(lift, cone_points,
+                                                      cone_dict["lift_matrix"], mult)
                 polynomials[rep] = off_set_poly
 
             cone_dict["polynomials"] = polynomials
 
+    def _nudge_off_set(self, lift, cone_points, cone, ray_sum):
+        mult = 0
+        
+        while lift not in cone:
+            mult += 1
+            lift += ray_sum
+
+        if mult not in cone_points:
+            mults = free_module_element(mult for k in range(self._num_variables))
+            higher_points = [b + mults for b in cone_points[0]]
+            cone_points[mult] = higher_points
+
+        return mult
+
+    def _get_off_set_poly(self, lift, cone_points, lift_matrix, mult):
+        num_integral_points = []
+        for point in cone_points[mult]:
+            polytope_point = lift_matrix*point + lift
+            polytope = self._create_polytope_from_matrix(polytope_point)
+            num_integral_points.append(len(polytope.integral_points()))
+
+        off_set_poly = self._R.interpolation(self._max_degree,
+                                             cone_points[mult],
+                                             num_integral_points)
+        return off_set_poly
 
     def _create_polytope_from_matrix(self, b):
         """
@@ -115,6 +119,7 @@ class PiecewiseEhrhartQuasiPolynomial():
         """
         inequalities = [[b[k]] + list(-self._A.rows()[k]) for k in range(self._A.nrows())]
         return Polyhedron(ieqs = inequalities)
+
 
     def __call__(self, point):
         return self.evaluate(point)
@@ -236,44 +241,23 @@ def _compute_change_of_basis_matrices(cone_basis, lin_vectors):
     M = K.inverse()
     return K, M
 
-def _simplex_points(dim, scaler):
+def _generate_cone_points(dimension, scaler):
     """
     Return all integral points of a simplex of dimension ``dim`` scaled
     by ``scaler``. Always returns exactly `dim + scaler choose dim` points.
 
-    TESTS:
-
-        sage: from ehrhart_quasi_polynomial.ehrhart_piecewise import _simplex_points
-        sage: _simplex_points(2, 2)
-        ((0, 0), (0, 1), (0, 2), (1, 0), (1, 1), (2, 0))
-    """
-    vertices = ((scaler*(k == d) for k in range(dim)) for d in range(dim+1))
-    simplex = Polyhedron(vertices)
-    return simplex.integral_points()
-
-def _generate_cone_points(dimension, number):
-    """
-    Return a tuple of length ``number`` containing integral points of
-    dimension ``dimension``.
-
     TESTS::
 
         sage: from ehrhart_quasi_polynomial.ehrhart_piecewise import _generate_cone_points
-        sage: _generate_cone_points(3, 5)
-        ((0, 0, 0), (1, 0, 0), (0, 1, 0), (0, 0, 1), (2, 0, 0))
+        sage: _generate_cone_points(2, 2)
+        ((0, 0), (1, 0), (0, 1), (2, 0), (1, 1), (0, 2))
     """
     origin = free_module_element(0 for k in range(dimension))
     points = (origin, )
-    points_len = 0
 
     basis = [free_module_element(int(k == d) for k in range(dimension))
              for d in range(dimension)]
 
-    index = 1
-    while points_len <= number:
-        new_points = tuple(sum(combi) for combi in
-                           combinations_with_replacement(basis, index))
-        points += new_points
-        index += 1
-        points_len += len(new_points)
-    return points[:number]
+    points += tuple(sum(combi) for index in range(1, scaler+1)
+                    for combi in combinations_with_replacement(basis, index))
+    return points

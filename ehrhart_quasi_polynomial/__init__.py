@@ -18,7 +18,7 @@ from .ehrhart_piecewise import (PiecewiseEhrhartQuasiPolynomial,
                                 _hat_denominator,
                                 _determine_lifts,
                                 _compute_change_of_basis_matrices,
-                                _simplex_points)
+                                _generate_cone_points)
 
 __all__ = [IntegerPeriodicFunctionRing.__name__,
            QuasiPolynomialRing.__name__,

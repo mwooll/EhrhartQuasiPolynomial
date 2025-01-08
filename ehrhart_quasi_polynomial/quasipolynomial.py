@@ -23,9 +23,12 @@ def construct_quasipolynomial(polynomials, period, QPR):
         sage: x = PolynomialRing(QQ, "x").gen()
         sage: QPR = QuasiPolynomialRing(QQ)
         sage: polys = [x+1, x**2+2, x+3, x**2+4]
-        sage: construct_quasipolynomial(polys, 4, QPR) # doctest: +NORMALIZE_WHITESPACE
+        sage: q = construct_quasipolynomial(polys, 4, QPR); q # doctest: +NORMALIZE_WHITESPACE
         QuasiPolynomialElement(Ring of Quasi-Polynomials over Rational Field,
                                [[4, 1, 2, 3], [0, 1], [1, 0]])
+        sage: print(q)
+        [4, 1, 2, 3] + [0, 1]*t + [1, 0]*t^2
+            
     """
     polynomials = deque(polynomials)
     polynomials.rotate(1)
@@ -59,8 +62,7 @@ class QuasiPolynomialElement(RingElement):
         sage: qpr()
         QuasiPolynomialElement(Ring of Quasi-Polynomials over Rational Field, [[0]])
         sage: print(qpr([[0, 1], 2, 3])) # doctest: +NORMALIZE_WHITESPACE
-        QuasiPolynomial given by
-        [0, 1] + [2]*t + [3]*t^2
+        [0, 1] + 2*t + 3*t^2
     """
     def __init__(self, parent, coefficients=None):
         """
@@ -160,11 +162,13 @@ class QuasiPolynomialElement(RingElement):
         return self._period
 
     def __str__(self):
-        function_str = "QuasiPolynomial given by \n"
-        function_str += f"{self._coefficients[0].constants()}"
-        for power, coef in enumerate(self._coefficients[1:]):
-            function_str += f" + {coef.constants()}*t" + f"^{power+1}"*(power>0)
-        return function_str
+        if self._degree == 0:
+            return str(self._coefficients[0])
+
+        monomials = [f"{coef}*"*(coef != 1) + "t" + f"^{power+1}"*(power >= 1)
+                     for power, coef in enumerate(self._coefficients[1:]) if coef]
+        lead = f"{self._coefficients[0]} + " if self._coefficients[0] else ""
+        return lead + " + ".join(monomials)
 
     def __repr__(self):
         coefficients = [coef.constants() for coef in self._coefficients]
@@ -438,3 +442,4 @@ class QuasiPolynomialFunctor(ConstructionFunctor):
     def merge(self, other):
         if isinstance(other, type(self)):
             return self
+    

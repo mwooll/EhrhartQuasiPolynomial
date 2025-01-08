@@ -39,6 +39,8 @@ def ehrhart_quasi_polynomial(vertices):
         sage: unit_square = [[0, 0], [1, 0], [1, 1], [0, 1]]
         sage: q = ehrhart_quasi_polynomial(unit_square); q
         QuasiPolynomialElement(Ring of Quasi-Polynomials over Rational Field, [[1], [2], [1]])
+        sage: print(q)
+        1 + 2*t + t^2
         sage: q(1) # number of points of the unit cube
         4
         sage: q(2) # number of points of the unit cube scaled by `2`
@@ -48,9 +50,11 @@ def ehrhart_quasi_polynomial(vertices):
 
         sage: half_unit_cube = [[0, 0, 0], [0, 0, 1/2], [0, 1/2, 1/2], [0, 1/2, 0],
         ....:           [1/2, 0, 0], [1/2, 0, 1/2], [1/2, 1/2, 1/2], [1/2, 1/2, 0]]
-        sage: ehrhart_quasi_polynomial(half_unit_cube) # doctest: +NORMALIZE_WHITESPACE
+        sage: r = ehrhart_quasi_polynomial(half_unit_cube); r # doctest: +NORMALIZE_WHITESPACE
         QuasiPolynomialElement(Ring of Quasi-Polynomials over Rational Field,
                                [[1, 1/8], [3/2, 3/8], [3/4, 3/8], [1/8]])
+        sage: print(r)
+        [1, 1/8] + [3/2, 3/8]*t + [3/4, 3/8]*t^2 + 1/8*t^3
     """
     if not vertices: # catches empty lists and tuples
         return QPR.zero()

@@ -47,12 +47,17 @@ class TestQuasiPolynomial(TestCase):
         pass
 
     def test_str(self):
+        self.assertEqual(str(self.QPR([2])), "2")
+        self.assertEqual(str(self.QPR([[1, 2]])), "[1, 2]")
+
         self.assertEqual(str(self.poly),
-                          "QuasiPolynomial given by \n" +
-                          "[1] + [2]*t + [3]*t^2")
+                          "1 + 2*t + 3*t^2")
         self.assertEqual(str(self.qp),
-                         "QuasiPolynomial given by \n"
-                         + "[1] + [2, 3]*t + [1, 2, 3]*t^2")
+                         "1 + [2, 3]*t + [1, 2, 3]*t^2")
+
+        q = self.QPR([[0], [1, 2], [3], [0], [1]])
+        self.assertEqual(str(q),
+                         "[1, 2]*t + 3*t^2 + t^4")
 
     # math support
     def test_neg(self):

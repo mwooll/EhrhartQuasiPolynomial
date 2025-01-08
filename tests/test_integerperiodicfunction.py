@@ -11,6 +11,13 @@ class TestIntegerPeriodicFunction(TestCase):
         self.ipf = self.ipfr([1, 2, 3])
         self.zero = self.ipfr.zero()
 
+    def test_eq(self):
+        self.assertTrue(self.zero == 0)
+        self.assertFalse(self.zero == 1)
+        self.assertTrue(self.ipfr([1]) == 1)
+
+        self.assertFalse(self.ipf == self.ipfr([2]))
+
     def test_zero(self):
         self.assertEqual(self.ipfr(), self.ipfr([0]))
         self.assertEqual(self.ipfr(), self.zero)
@@ -31,11 +38,8 @@ class TestIntegerPeriodicFunction(TestCase):
                          'IntegerPeriodicFunctionElement(Ring of Integer Periodic Functions over Rational Field, [1, 2, 3])')
 
     def test_str(self):
-        self.assertEqual(str(self.ipf),
-                         "IntegerPeriodicFunction over Rational Field given by"
-                         + "\n\t1 if k%3 == 0"
-                         + "\n\t2 if k%3 == 1"
-                         + "\n\t3 if k%3 == 2")
+        self.assertEqual(str(self.ipfr([1])), "1")
+        self.assertEqual(str(self.ipf), "[1, 2, 3]")
 
 
     def test_neg(self):

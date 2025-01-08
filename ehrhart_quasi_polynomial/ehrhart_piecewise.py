@@ -220,6 +220,13 @@ def _hat_denominator(A, points):
                  for poly in polytopes)
 
 def _determine_lifts(quotient):
+    """
+    Return a dictionairy for determinisic evaluation of lifts from 'quotient'.
+
+    TESTS::
+
+        
+    """
     representatives = product(*(range(k) for k in quotient.invariants()))
     lift_matrix = create_matrix([gen.lift() for gen in quotient.gens()]).T
     lifts = {tuple(rep): lift_matrix*free_module_element(rep)
@@ -236,6 +243,10 @@ def _compute_change_of_basis_matrices(cone_basis, lin_vectors):
     """
     Return the change of basis matrix from the standard basis to the basis
     (``lineality_vectors``, ``cone_basis``) along with its inverse.
+
+    TESTS::
+
+        
     """
     K = create_matrix(cone_basis + lin_vectors).T
     M = K.inverse()

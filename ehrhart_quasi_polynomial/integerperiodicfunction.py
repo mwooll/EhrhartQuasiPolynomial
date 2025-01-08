@@ -23,10 +23,7 @@ class IntegerPeriodicFunctionElement(RingElement):
         sage: ipfr()
         IntegerPeriodicFunctionElement(Ring of Integer Periodic Functions over Rational Field, [0])
         sage: print(ipfr([1, 2, 3])) # doctest: +NORMALIZE_WHITESPACE
-        IntegerPeriodicFunction over Rational Field given by
-            1 if k%3 == 0
-            2 if k%3 == 1
-            3 if k%3 == 2
+        [1, 2, 3]
     """
     def __init__(self, parent, constants=None):
         """
@@ -169,10 +166,9 @@ class IntegerPeriodicFunctionElement(RingElement):
         return f"IntegerPeriodicFunctionElement({self.parent()}, {self._constants})"
 
     def __str__(self):
-        function_str = f"IntegerPeriodicFunction over {self.parent().base_ring()} given by"
-        for ind, val in enumerate(self._constants):
-            function_str += f"\n\t{val} if k%{self._period} == {ind}"
-        return function_str
+        if self._period == 1:
+            return(str(self._constants[0]))
+        return str(self._constants)
 
     def __eq__(self, other):
         """
@@ -193,6 +189,12 @@ class IntegerPeriodicFunctionElement(RingElement):
             return self._period == other.period() and self._constants == other.constants()
         else:
             return self._period == 1 and self._constants[0] == other
+
+    def __ne__(self, other):
+        """
+        Return whether ``self`` and ``other`` are not considered equal in ``self.parent()``.
+        """
+        return not self.__eq__(other)
 
     def __bool__(self):
         """

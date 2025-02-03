@@ -16,8 +16,8 @@ x = R.gen()
 QPR = QuasiPolynomialRing(QQ)
 
 
-# calculate ehrhart quasipolynomial
-def ehrhart_quasi_polynomial(vertices):
+# compute ehrhart quasipolynomial
+def compute_ehrhart_quasi_polynomial(vertices):
     """
     Compute the Ehrhart quasi-polynomial of the (convex) polytope defined by ``vertices``.
     Return a 'ehrhart_quasi_polynomial.quasipolynomial.QuasiPolynomialElement'
@@ -35,9 +35,9 @@ def ehrhart_quasi_polynomial(vertices):
 
     EXAMPLES::
 
-        sage: from ehrhart_quasi_polynomial.ehrhart_quasi_polynomial import ehrhart_quasi_polynomial
+        sage: from ehrhart_quasi_polynomial.ehrhart_quasi_polynomial import compute_ehrhart_quasi_polynomial
         sage: unit_square = [[0, 0], [1, 0], [1, 1], [0, 1]]
-        sage: q = ehrhart_quasi_polynomial(unit_square); q
+        sage: q = compute_ehrhart_quasi_polynomial(unit_square); q
         QuasiPolynomialElement(Ring of Quasi-Polynomials over Rational Field, [[1], [2], [1]])
         sage: print(q)
         1 + 2*t + t^2
@@ -50,7 +50,7 @@ def ehrhart_quasi_polynomial(vertices):
 
         sage: half_unit_cube = [[0, 0, 0], [0, 0, 1/2], [0, 1/2, 1/2], [0, 1/2, 0],
         ....:           [1/2, 0, 0], [1/2, 0, 1/2], [1/2, 1/2, 1/2], [1/2, 1/2, 0]]
-        sage: r = ehrhart_quasi_polynomial(half_unit_cube); r # doctest: +NORMALIZE_WHITESPACE
+        sage: r = compute_ehrhart_quasi_polynomial(half_unit_cube); r # doctest: +NORMALIZE_WHITESPACE
         QuasiPolynomialElement(Ring of Quasi-Polynomials over Rational Field,
                                [[1, 1/8], [3/2, 3/8], [3/4, 3/8], [1/8]])
         sage: print(r)

@@ -111,4 +111,4 @@ class TestQuasiPolynomial(TestCase):
 
 
 if __name__ == "__main__":
-    main(failfast=True)   
+    main(failfast=True)

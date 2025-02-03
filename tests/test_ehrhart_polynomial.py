@@ -1,4 +1,4 @@
-from ehrhart_quasi_polynomial import (ehrhart_quasi_polynomial,
+from ehrhart_quasi_polynomial import (compute_ehrhart_quasi_polynomial,
                                       _points_contained_sequence, _points_contained,
                                       get_period, _get_bounding_extrema,
                                       _get_bounding_box, _get_bounding_box_rational,
@@ -20,39 +20,39 @@ x = R.gen()
 QPR = QuasiPolynomialRing(QQ)
 
 class TestEhrhartPolynomial(TestCase):
-    def test_ehrhart_quasi_polynomial(self):
+    def test_compute_ehrhart_quasi_polynomial(self):
         # integral polytopes
-        point_poly = ehrhart_quasi_polynomial([(0, 0, 0, 0, 0)])
+        point_poly = compute_ehrhart_quasi_polynomial([(0, 0, 0, 0, 0)])
         self.assertEqual(point_poly, QPR([1]))
 
-        axis = ehrhart_quasi_polynomial([[-3], [3]])
+        axis = compute_ehrhart_quasi_polynomial([[-3], [3]])
         self.assertEqual(axis, QPR([1, 6]))
 
-        triangle = ehrhart_quasi_polynomial([[0, 0], [1, 0], [0, 1]])
+        triangle = compute_ehrhart_quasi_polynomial([[0, 0], [1, 0], [0, 1]])
         self.assertEqual(triangle, QPR([1, 1.5, 0.5]))
 
-        flat_tri = ehrhart_quasi_polynomial([[0, 0, 0], [1, 0, 0], [0, 1, 0]])
+        flat_tri = compute_ehrhart_quasi_polynomial([[0, 0, 0], [1, 0, 0], [0, 1, 0]])
         self.assertEqual(flat_tri, QPR([1, 1.5, 0.5]))
 
-        triangle_pyramid = ehrhart_quasi_polynomial([[0, 0, 0], [1, 0, 0],
+        triangle_pyramid = compute_ehrhart_quasi_polynomial([[0, 0, 0], [1, 0, 0],
                                                 [0, 1, 0], [0, 0, 1]])
         self.assertEqual(triangle_pyramid, QPR([1, 11/6, 1, 1/6]))
 
-        square_poly = ehrhart_quasi_polynomial([[0, 0], [1, 0], [1, 1], [0, 1]])
+        square_poly = compute_ehrhart_quasi_polynomial([[0, 0], [1, 0], [1, 1], [0, 1]])
         self.assertEqual(square_poly, QPR([1, 2, 1])) # (x + 1)**2
 
         vertices = [(0, 0, 0), (0, 0, 1), (0, 1, 0), (0, 1, 1),
                     (1, 0, 0), (1, 0, 1), (1, 1, 0), (1, 1, 1)]
-        cube_poly = ehrhart_quasi_polynomial(vertices)
+        cube_poly = compute_ehrhart_quasi_polynomial(vertices)
         self.assertEqual(cube_poly, QPR([1, 3, 3, 1]))# (x + 1)**3
 
         # rational polytopes
         rational_point = [[1/7, 1/2]]
         values = [1] + [0]*13
-        self.assertEqual(ehrhart_quasi_polynomial(rational_point), QPR([values]))
+        self.assertEqual(compute_ehrhart_quasi_polynomial(rational_point), QPR([values]))
 
         rational_triangle = [(0, 0), (3/2, 0), (0, 1/3)]
-        self.assertEqual(ehrhart_quasi_polynomial(rational_triangle),
+        self.assertEqual(compute_ehrhart_quasi_polynomial(rational_triangle),
                          QPR([[1, 3/4], 1, 1/4]))
 
 
@@ -61,7 +61,7 @@ class TestEhrhartPolynomial(TestCase):
         # integral
         point = _points_contained_sequence([[0, 0, 0, 0, 0]])
         self.assertEqual(point,
-                         ([1], 1, 0))
+                         ([1], 1, 1))
 
         square = _points_contained_sequence([[0, 0], [1, 0], [1, 1], [0, 1]])
         self.assertEqual(square, ([4, 9, 16], 1, 1))

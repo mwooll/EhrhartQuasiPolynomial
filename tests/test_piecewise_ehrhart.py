@@ -1,10 +1,7 @@
 from ehrhart_quasi_polynomial.ehrhart_piecewise import (
     PiecewiseEhrhartQuasiPolynomial as PEQP,
     create_polytope_from_matrix,
-    secondary_fan,
-    _process_fan_vectors,
     _compute_change_of_basis_matrices,
-    _hat_denominator,
     _generate_cone_points)
 
 from sage.geometry.polyhedron.constructor import Polyhedron
@@ -52,13 +49,6 @@ class TestEhrhartPiecewise(TestCase):
         expected_lin = tuple(free_module_element(lin) for lin
                              in [(1, 0, -1, 0), (0, 1, -1, -1)])
         self.assertEqual(self.peqp._lin_vectors, expected_lin)
-
-    def test_process_fan_vectors(self):
-        sec_fan = secondary_fan(self.peqp._A)
-        expected = tuple(free_module_element(lin) for lin
-                    in [(1, 0, -1, 0), (0, 1, -1, -1)])
-        actual = _process_fan_vectors(sec_fan.fan_dict["LINEALITY_SPACE"])
-        self.assertEqual(expected, actual)
 
     def test_generate_cone_dicts(self):
         PEQP._process_secondary_fan(self.peqp)

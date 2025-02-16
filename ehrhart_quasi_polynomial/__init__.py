@@ -14,7 +14,7 @@ from .ehrhart_quasi_polynomial import (compute_ehrhart_quasi_polynomial,
 
 from .ehrhart_piecewise import (PiecewiseEhrhartQuasiPolynomial,
                                 create_polytope_from_matrix,
-                                secondary_fan,
+                                secondary_fan, test_PEQP,
                                 _denominators,
                                 _determine_lifts,
                                 _compute_change_of_basis_matrices,
@@ -26,4 +26,5 @@ __all__ = [IntegerPeriodicFunctionRing.__name__,
            compute_ehrhart_quasi_polynomial.__name__,
            PiecewiseEhrhartQuasiPolynomial.__name__,
            create_polytope_from_matrix.__name__,
-           secondary_fan.__name__]
+           secondary_fan.__name__,
+           test_PEQP.__name__]

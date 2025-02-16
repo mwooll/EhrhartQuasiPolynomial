@@ -6,9 +6,11 @@ from sage.geometry.cone import Cone
 from sage.geometry.polyhedron.constructor import Polyhedron
 from sage.interfaces.gfan import gfan
 from sage.matrix.constructor import Matrix as create_matrix
+from sage.matrix.matrix_space import MatrixSpace
 from sage.modules.free_module import span
 from sage.modules.free_module_element import free_module_element
 from sage.modules.free_quadratic_module_integer_symmetric import IntegralLattice
+from sage.rings.integer_ring import ZZ
 from sage.rings.polynomial.groebner_fan import PolyhedralFan
 from sage.rings.polynomial.polynomial_ring_constructor import PolynomialRing
 from sage.rings.rational_field import QQ
@@ -17,6 +19,13 @@ from sage.structure.element import Matrix
 
 class PiecewiseEhrhartQuasiPolynomial():
     def __init__(self, A):
+        if not A in MatrixSpace(ZZ, A.nrows(), A.ncols()):
+            raise TypeError("A must be an integer matrix.")
+
+        if not Cone([a for a in A.rows()]).is_full_space():
+            raise ValueError("The cone spanned by the rows of A needs "
+                              "to be equal to the ambient vector space.")
+
         self._A = A
         self._process_secondary_fan()
 
@@ -29,6 +38,7 @@ class PiecewiseEhrhartQuasiPolynomial():
         sec_fan = secondary_fan(self._A)
 
         self._amb_dim = sec_fan.ambient_dim()
+        print(self._amb_dim)
         self._ZZ_lattice = IntegralLattice(create_matrix.identity(self._amb_dim))
 
         self._rays = tuple(free_module_element(ray) for ray in sec_fan.rays())
@@ -56,6 +66,7 @@ class PiecewiseEhrhartQuasiPolynomial():
                 cone_dict["scaled_rays"] = tuple(self._scalars[idx]*self._rays[idx]
                                                 for idx in ray_list)
                 cone_basis = cone_dict["scaled_rays"] + self._lin_vectors
+                cone_dict["basis"] = cone_basis
                 cone_dict["cone"] = Cone(cone_basis + self._minus_lin)
 
                 cone_dict["lattice"] = self._ZZ_lattice.sublattice(cone_basis)
@@ -107,6 +118,10 @@ class PiecewiseEhrhartQuasiPolynomial():
         return mult
 
     def _get_off_set_poly(self, lift, cone_points, lift_matrix, mult):
+        """
+        Returns the interpolating multivariate polynomial for the lifted
+        offset point ``lift``.
+        """
         num_integral_points = []
         for point in cone_points[mult]:
             polytope_point = lift_matrix*point + lift
@@ -127,6 +142,10 @@ class PiecewiseEhrhartQuasiPolynomial():
         return Polyhedron(ieqs = inequalities)
 
     def _transform_polynomials(self):
+        """
+        Performs the variables transformation from variables defined using
+        the basis of the cone, to the standard basis of `R^(self._amb_dim)`.
+        """
         gens = self._S.gens()
         for cone in self._cone_dicts:
             cone["transformed"] = {}
@@ -140,28 +159,33 @@ class PiecewiseEhrhartQuasiPolynomial():
             self._simplify_invariance_lattice(cone)
 
     def _simplify_invariance_lattice(self, cone):
+        """
+        Computes the largest superlattice on which the quasi-polynomial is
+        still periodic. This representation is used inside __str__ to reduce
+        the number of polynomials printed.
+        """
         invariants = tuple(lift for lift in list(cone["lifts"].values())[1:]
                            if self._check_periodicity(cone,
                                                       free_module_element(lift)))
         inv_basis = tuple(span(invariants).matrix().rows())
-        cone["invariant_basis"] = inv_basis + cone["scaled_rays"]
-        lattice = self._ZZ_lattice.sublattice(cone["invariant_basis"])
+        cone["invariant_basis"] = inv_basis + cone["scaled_rays"] + self._lin_vectors
+        lattice = self._ZZ_lattice.submodule( cone["invariant_basis"])
         quotient = self._ZZ_lattice.quotient(lattice)
         cone["invariant_quotient"] = quotient
-        # print(f"{quotient=}")
 
         representatives = tuple(set(quotient(lift) for lift in cone["lifts"].values()))
-        # print(f"{representatives = }")
         cone["invariant_lifts"] = {tuple(rep): tuple(rep.lift())
                                    for rep in representatives}
-        # print(f'{cone["invariant_lifts"] = }')
 
         cone["print"] = {tuple(cone["lifts"][key]): poly
                         for key, poly in cone["transformed"].items()
                         if tuple(cone["lifts"][key]) in cone["invariant_lifts"].values()}
-        # print(f'{cone["print"] = }')
 
     def _check_periodicity(self, cone, inv_cand):
+        """
+        Return whether the quasi-polynomial on ``cone`` is periodic with
+        respect to ``inv_cand``.
+        """
         for rep, poly in cone["transformed"].items():
             translated = cone["lifts"][rep] + inv_cand
             trans_rep = cone["quotient"](translated)
@@ -176,8 +200,7 @@ class PiecewiseEhrhartQuasiPolynomial():
         cone_strings = []
         for cone in self._cone_dicts:
             rays = cone["rays"] + self._lin_vectors + self._minus_lin
-            basis = cone["invariant_basis"] #+ self._lin_vectors
-            # should self._lin_vectors also be in?
+            basis = cone["invariant_basis"]
             cone_str = f"On Cone{rays}\ninvariant on Lattice{basis}:"
 
             rep_string = [str(rep) for rep in cone["print"].keys()]
@@ -210,19 +233,6 @@ class PiecewiseEhrhartQuasiPolynomial():
             if point in cone_dict["cone"]:
                 rep = tuple(cone_dict["quotient"](point))
                 result = cone_dict["transformed"][rep](*point)
-                return result
-        return 0
-
-    def evaluation(self, point):
-        if len(point) != self._amb_dim:
-            raise ValueError("Dimension of ``point`` needs to be equal to the ambient"
-                              f" dimension of ``self`` which is {self._amb_dim}.")
-    
-        for k, cone_dict in enumerate(self._cone_dicts):
-            if point in cone_dict["cone"]:
-                equiv = tuple(cone_dict["invariant_quotient"](point))
-                rep = cone_dict["invariant_lifts"][equiv]
-                result = cone_dict["print"][rep](*point)
                 return result
         return 0
 
@@ -299,10 +309,6 @@ def _denominators(A, points):
 def _determine_lifts(quotient):
     """
     Return a dictionairy for determinisic evaluation of lifts from 'quotient'.
-
-    TESTS::
-
-
     """
     representatives = product(*(range(k) for k in quotient.invariants()))
     lift_matrix = create_matrix([gen.lift() for gen in quotient.gens()]).T
@@ -319,14 +325,13 @@ def _get_basis_vectors(lin_vectors, scaled_rays, amb_dim):
     if len(lin_vectors) + len(scaled_rays) == amb_dim:
         return scaled_rays
 
-    raise NotImplementedError("Need to construct basis of R^n out of n+k vectors.")
+    raise NotImplementedError("Need to construct basis of R^{amb_dim} out of "
+                              "{len(lin_vectors) + len(scaled_rays)} vectors.")
 
 def _compute_change_of_basis_matrices(cone_basis, lin_vectors):
     """
     Return the change of basis matrix from the standard basis to the basis
     (``lineality_vectors``, ``cone_basis``) along with its inverse.
-
-    TESTS::
     """
     K = create_matrix(cone_basis + lin_vectors).T
     M = K.inverse()
@@ -352,3 +357,27 @@ def _generate_cone_points(dimension, scaler):
     points += tuple(sum(combi) for index in range(1, scaler+1)
                     for combi in combinations_with_replacement(basis, index))
     return points
+
+def test_PEQP(A, peqp, min_val, max_val, quiet=True):
+    """
+    Return True whether ``peqp`` evaluated at `b` in the n-cube ``[min_val, max_val]^n``
+    is equal to the number of integral points of `P_A(b)` = ``create_polytope_from_matrix(A, b)``.
+    """
+    if A.nrows() != peqp._amb_dim:
+        raise ValueError(f"A has dimensions {A.nrows()}x{A.ncols()} but"
+                         f"peqp is a polynomial in {peqp._amb_dim} variables.")
+
+    ehr = lambda b: len(create_polytope_from_matrix(A, b).integral_points())
+
+    for b in combinations_with_replacement(range(min_val, max_val+1), peqp._amb_dim):
+        e = ehr(b)
+        p = peqp(b)
+        if not quiet:
+            print(f"{b}: {e} == {p} is {e == p}")
+        if e != p:
+            print(f"Different evaluation found for b = {b}: "
+                  f"ehr(b) = {e} != {p} = peqp(b)")
+            return False
+
+    return True
+        

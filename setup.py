@@ -8,11 +8,11 @@ def readfile(filename):
 
 setup(
     name="ehrhart_quasi_polynomial",
-    version="0.1.0",
+    version="1.0.0",
     description="Package to calculate the Ehrhart quasi-polynomial of convex polytopes",
     long_description=readfile("README.md"), # get the long description from the README
 
-    url="https://github.com/mwooll/Ehrhart",
+    url="https://github.com/mwooll/EhrhartQuasiPolynomial",
     author="Mark Woolley",
     author_email="mark.woolley@uzh.ch",
 

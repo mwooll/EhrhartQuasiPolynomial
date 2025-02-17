@@ -35,6 +35,10 @@ class PiecewiseEhrhartQuasiPolynomial():
         self._transform_polynomials()
 
     def _process_secondary_fan(self):
+        """
+        Computes the secondary fan of `self._A` and stores all relevant values
+        in appropriately named instance variables.
+        """
         sec_fan = secondary_fan(self._A)
 
         self._amb_dim = sec_fan.ambient_dim()
@@ -58,6 +62,10 @@ class PiecewiseEhrhartQuasiPolynomial():
 
 
     def _generate_cone_dicts(self):
+        """
+        Constructs a dictionary for every maximal cone of the secondary fan
+        which contains all relevant information to perform the computation on its cone.
+        """
         cone_dicts = []
         for ray_lists in  self._maximal_cones.values():
             for ray_list in ray_lists:
@@ -88,6 +96,9 @@ class PiecewiseEhrhartQuasiPolynomial():
         return cone_dicts
 
     def _compute_piecewise(self):
+        """
+        Computes the piecewise Ehrhart quasi-polynomial.
+        """
         points = _generate_cone_points(self._num_variables, self._max_degree)
         cone_points = {0: points}
         for cone_dict in self._cone_dicts:
@@ -104,6 +115,9 @@ class PiecewiseEhrhartQuasiPolynomial():
             cone_dict["polynomials"] = polynomials
 
     def _nudge_off_set(self, lift, cone_points, cone, ray_sum):
+        """
+        Returns the factor ``mult`` such that `lift + mult*ray_sum in cone` is true. 
+        """
         mult = 0
 
         while lift not in cone:
